@@ -1,0 +1,5 @@
+# Personal photographs and anything else private stay on this machine.
+/private/
+
+# macOS
+.DS_Store
