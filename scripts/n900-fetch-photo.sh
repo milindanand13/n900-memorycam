@@ -9,10 +9,10 @@
 # reads or stores it. Photos land in private/inbox/, which git ignores.
 # With no name, it fetches the one photo on the phone that is not already in
 # the inbox (or in MEMORYCAM_ARCHIVE, if set). It does not use dates or file
-# times, because the N900's clock is wrong and old photos can look newer.
+# times, because the N900's clock was wrong during earlier captures.
 set -eu
 
-host=${N900_HOST:?Set N900_HOST to the N900 IP address, e.g. N900_HOST=172.20.10.6}
+host=${N900_HOST:?Set N900_HOST to the N900 IP address}
 repo_root=$(cd "$(dirname "$0")/.." && pwd)
 inbox=${MEMORYCAM_INBOX:-"$repo_root/private/inbox"}
 archive=${MEMORYCAM_ARCHIVE:-}
