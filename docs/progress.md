@@ -8,9 +8,9 @@ Only verified results are recorded here. Anything unconfirmed is marked as not y
 - **SSH.** Mac → N900 login as root succeeded over a phone hotspot. The first attempt failed because the phone only offers `ssh-rsa` and `ssh-dss` host keys; adding `-o HostKeyAlgorithms=+ssh-rsa` fixed it. The phone runs BusyBox v1.10.2 on `armv7l`.
 - **Existing photo transfer.** One photo was copied and its MD5 matched on both ends.
 - **Fresh capture.** A new photo was taken on the N900 and transferred: 2576×1936 JPEG, MD5 matched.
-- **Wrong phone clock.** The N900 reports January 2009, so the fresh photo's filename and EXIF date are wrong. The clock has not been changed yet.
+- **Wrong phone clock.** The N900 reported January 2009, so the first fresh photo's filename and EXIF date are wrong. The clock has since been corrected: the next photo was named `20260929_001.jpg`.
 - **Debugging with AI.** The first fresh-transfer attempt failed because a path with spaces broke SSH's `ControlPath` option. Codex switched to `ssh -S`, which fixed it.
 - **Test archive.** 29 older N900 photos were copied into a private archive; every file's MD5 matched the phone's. They stay out of this repository.
-- **Fetch script on the real phone.** `scripts/n900-fetch-photo.sh` connected to the N900 and transferred a photo with a matching checksum. It picked a 2012 photo as "newest" instead of the fresh one: because the clock is wrong, the fresh photo's file time is 2009. The script now fetches the photo that isn't on the Mac yet, which was tested against a simulated phone; not yet re-run on the real N900.
+- **Fetch script on the real phone.** `scripts/n900-fetch-photo.sh` connected to the N900 and transferred a photo with a matching checksum. It picked a 2012 photo as "newest" instead of the fresh one: because the clock is wrong, the fresh photo's file time is 2009. The script now fetches the photo that isn't on the Mac yet, which was tested against a simulated phone and then verified on the real N900: it found the one new photo (`20260929_001.jpg`), transferred it and the checksums matched.
 
 Not yet verified: image analysis, matching, photo-pair layout, printing, automatic upload.
