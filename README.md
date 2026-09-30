@@ -39,15 +39,15 @@ You need a Mac, a Nokia N900 with a root shell and OpenSSH installed, and both o
    ```bash
    ssh -o HostKeyAlgorithms=+ssh-rsa root@<phone-ip>
    ```
-3. Take a photo on the N900, then copy the newest one to the Mac:
+3. Take a photo on the N900, then copy it to the Mac:
    ```bash
    N900_HOST=<phone-ip> scripts/n900-fetch-photo.sh
    ```
-   It lands in `private/inbox/`, which git ignores. Pass a filename to fetch a specific photo.
+   It fetches the one photo on the phone that isn't already on the Mac and saves it in `private/inbox/`, which git ignores. Set `MEMORYCAM_ARCHIVE` to a folder of photos you've already imported so those are skipped too. Pass a filename to fetch a specific photo.
 
 ## Known behaviour
 
-- The N900's clock is set to 2009, so photo filenames and EXIF dates are wrong. The fetch script picks the newest photo by file order, not by date.
+- The N900's clock is set to 2009, so photo filenames, EXIF dates and file times are wrong: a new photo can look older than a 2012 one. The fetch script therefore picks the photo that isn't on the Mac yet instead of the newest one.
 - Modern macOS SSH refuses the N900's host key without `HostKeyAlgorithms=+ssh-rsa`.
 - Paths containing spaces broke SSH's `ControlPath` option during development; the script avoids connection sharing for this reason.
 - `scripts/n900-fetch-photo.sh` uses macOS's `md5` command, so it runs on macOS only.

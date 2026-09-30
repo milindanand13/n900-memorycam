@@ -2,18 +2,20 @@
 # Copy one photo from a Nokia N900 to this Mac over SSH, verified by MD5.
 #
 # Usage:
-#   N900_HOST=<phone-ip> scripts/n900-fetch-photo.sh              # newest photo
+#   N900_HOST=<phone-ip> scripts/n900-fetch-photo.sh              # the new photo
 #   N900_HOST=<phone-ip> scripts/n900-fetch-photo.sh 20090119_004.jpg
 #
 # SSH asks for the N900 root password in your terminal; this script never
 # reads or stores it. Photos land in private/inbox/, which git ignores.
-# The newest photo is chosen by file order on the phone, not by its date,
-# because the N900's clock may be wrong.
+# With no name, it fetches the one photo on the phone that is not already in
+# the inbox (or in MEMORYCAM_ARCHIVE, if set). It does not use dates or file
+# times, because the N900's clock is wrong and old photos can look newer.
 set -eu
 
 host=${N900_HOST:?Set N900_HOST to the N900 IP address, e.g. N900_HOST=172.20.10.6}
 repo_root=$(cd "$(dirname "$0")/.." && pwd)
 inbox=${MEMORYCAM_INBOX:-"$repo_root/private/inbox"}
+archive=${MEMORYCAM_ARCHIVE:-}
 name=${1:-}
 
 case "$name" in
@@ -21,6 +23,13 @@ case "$name" in
 esac
 
 mkdir -p "$inbox"
+
+# Photo names already on the Mac. Only safe characters are kept, so the list
+# can be quoted into the remote command.
+known=$(for dir in "$inbox" ${archive:+"$archive"}; do
+    [ -d "$dir" ] && ls "$dir"
+done | grep -E '^[A-Za-z0-9._-]+$' | tr '\n' ' ')
+
 payload=$(mktemp "$inbox/.n900-transfer.XXXXXX")
 image_part=$(mktemp "$inbox/.n900-image.XXXXXX")
 trap 'rm -f "$payload" "$image_part"' EXIT
@@ -28,8 +37,19 @@ trap 'rm -f "$payload" "$image_part"' EXIT
 # Runs in the N900's BusyBox shell: print the filename, its checksum, then its bytes.
 remote_command="cd /home/user/MyDocs/DCIM || exit 1
 f='$name'
-[ -n \"\$f\" ] || f=\$(ls -t *.jpg *.JPG 2>/dev/null | head -n 1)
-[ -f \"\$f\" ] || { echo 'No photo found on the N900.' >&2; exit 1; }
+if [ -z \"\$f\" ]; then
+    known=' $known '
+    count=0
+    for c in *.jpg *.JPG; do
+        [ -f \"\$c\" ] || continue
+        case \"\$known\" in *\" \$c \"*) continue ;; esac
+        count=\$((count + 1))
+        f=\"\$c\"
+        echo \"New on phone: \$c\" >&2
+    done
+    [ \"\$count\" -eq 1 ] || { echo \"Found \$count photos not yet on the Mac; expected exactly 1. Pass a filename to choose one.\" >&2; exit 1; }
+fi
+[ -f \"\$f\" ] || { echo \"Photo not found on the N900: \$f\" >&2; exit 1; }
 echo \"\$f\"
 md5sum \"\$f\"
 cat \"\$f\""

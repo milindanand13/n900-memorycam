@@ -11,5 +11,6 @@ Only verified results are recorded here. Anything unconfirmed is marked as not y
 - **Wrong phone clock.** The N900 reports January 2009, so the fresh photo's filename and EXIF date are wrong. The clock has not been changed yet.
 - **Debugging with AI.** The first fresh-transfer attempt failed because a path with spaces broke SSH's `ControlPath` option. Codex switched to `ssh -S`, which fixed it.
 - **Test archive.** 29 older N900 photos were copied into a private archive; every file's MD5 matched the phone's. They stay out of this repository.
+- **Fetch script on the real phone.** `scripts/n900-fetch-photo.sh` connected to the N900 and transferred a photo with a matching checksum. It picked a 2012 photo as "newest" instead of the fresh one: because the clock is wrong, the fresh photo's file time is 2009. The script now fetches the photo that isn't on the Mac yet, which was tested against a simulated phone; not yet re-run on the real N900.
 
 Not yet verified: image analysis, matching, photo-pair layout, printing, automatic upload.
