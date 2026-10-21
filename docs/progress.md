@@ -35,3 +35,10 @@ Still unverified: daily query selection, unattended transfer, a general matching
 - `scripts/check.sh` passed in the working repository and in a separate repository-only checkout. It checks required files, shell syntax, whitespace, and the public/private file boundary without photographs.
 - An independent fresh AI session read only the public repository, ran the check, and accurately restated the project, completed work, constraints, next milestone, and verification limits after wording corrections.
 - This repository check does not reconnect to the N900, rerun private CLIP inference, judge a pairing, or test a printer.
+
+## 2026-10-21: transfer and matching code moved into this repository
+
+- The batch transfer script and the CLIP matching script were developed outside this repository during October. Both now live here as `scripts/transfer_photos.py` and `scripts/match_archive.py`, with their core logic unchanged (two checks were split into small functions so they can be tested). Paths now point at this repository's ignored `private/` folder, the matching script needs `--query` and `--archive` instead of personal default paths, and the CLIP download is a one-time `--download-model` step.
+- Added 13 offline tests in `tests/`, run by `scripts/check.sh`. They cover strict parsing of the phone's file list, never overwriting a photo with a reused name, skipping identical content, image-header checks, ranking order and normalisation, query-copy exclusion, repeatable tie order, rejection of broken features, duplicate counting, and refusing output outside `private/`. Two deliberately broken versions of the code (query copies not excluded; overwriting allowed) made the tests fail, so the tests do detect those faults.
+- `scripts/check.sh` passed with all 13 tests. Argument checks were run by hand: a missing archive, output outside `private/`, an invalid host and an inbox outside `private/` are all refused before any work starts.
+- Not verified since the move: a real transfer from the N900 and a full CLIP run on real photos with these repository versions. The October 9 transfer and October 20 matching results came from the earlier copies.

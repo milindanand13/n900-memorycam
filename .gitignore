@@ -1,5 +1,9 @@
 # Personal photographs and anything else private stay on this machine.
+/private
 /private/
 
 # macOS
 .DS_Store
+
+# Python
+__pycache__/

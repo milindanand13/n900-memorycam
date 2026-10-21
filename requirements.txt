@@ -1,0 +1,7 @@
+# scripts/check.sh and the tests need only NumPy.
+numpy
+# scripts/match_archive.py also needs these to read photos and run CLIP locally.
+pillow
+torch
+transformers
+# scripts/transfer_photos.py uses only the Python standard library.

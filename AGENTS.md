@@ -9,11 +9,11 @@ Memorycam uses a Nokia N900 as a deliberate daily camera. A Mac will select one 
 Verified so far:
 
 - capture on the N900 and manual SSH transfer to a Mac;
-- checksum-verified transfer with `scripts/n900-fetch-photo.sh`;
+- checksum-verified transfer with `scripts/n900-fetch-photo.sh` (one photo) and `scripts/transfer_photos.py` (every new photo; 131/131 verified on the phone on Oct 9 before it moved into this repository);
 - a private archive imported and checksum-verified;
-- a local CLIP visual-matching prototype that ranked 603 unique archive images for each of five preselected queries; Milind accepted those five sample pairings as sufficient for this prototype stage.
+- a local CLIP visual-matching prototype, `scripts/match_archive.py`, that ranked 603 unique portfolio photos for each of five hand-picked queries; Milind accepted those five sample pairings as sufficient for this prototype stage.
 
-The five-query result is a qualitative sample, not a general benchmark or a guarantee of a meaningful memory. The matching experiment and photographs remain private and are not required to check this repository.
+The five-query result is a qualitative sample, not a general benchmark or a guarantee of a meaningful memory. The candidates were portfolio photos standing in for the full personal archive. Photographs, model weights and results stay in `private/` and are not required to check this repository.
 
 Not yet verified: daily photo selection, unattended transfer, a general matching benchmark, printable layout, physical printing, scheduling, and separate detection that Milind and the N900 are both home. The next hardware milestone is two separate physical photo prints, after a printer is available. Do not implement printing or home automation unless explicitly asked.
 
@@ -38,4 +38,4 @@ Not yet verified: daily photo selection, unattended transfer, a general matching
 6. Update `docs/progress.md` with short, truthful results and remaining limits.
 7. Before committing, inspect the full staged diff and tracked-file list for private data.
 
-`scripts/check.sh` is repository-only: it checks required public files, shell syntax, whitespace, and that no private folder or common photo format is tracked. It does not connect to the N900, run CLIP, inspect private photographs, or test a printer.
+`scripts/check.sh` is repository-only and needs Python 3 with NumPy: it checks required public files, shell and Python syntax, runs the offline tests in `tests/`, checks whitespace, and confirms no private folder, photo or feature file is tracked. It does not connect to the N900, run CLIP, inspect private photographs, or test a printer. When you change transfer or matching logic, add or update a test in `tests/` that fails without your change.
