@@ -46,5 +46,13 @@ class ArchiveChecks(unittest.TestCase):
         self.assertFalse(match.inside_private(match.PRIVATE / '..' / 'results'))
 
 
+class ReviewChecks(unittest.TestCase):
+    def test_page_keeps_css_braces_and_inserts_results(self):
+        page = match.review_page(2, ['<figure>match</figure>'])
+        self.assertIn('body{background:#171717', page)
+        self.assertIn('2 unique archive photos', page)
+        self.assertIn('<figure>match</figure>', page)
+
+
 if __name__ == '__main__':
     unittest.main()

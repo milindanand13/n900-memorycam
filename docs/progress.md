@@ -42,3 +42,9 @@ Still unverified: daily query selection, unattended transfer, a general matching
 - Added 13 offline tests in `tests/`, run by `scripts/check.sh`. They cover strict parsing of the phone's file list, never overwriting a photo with a reused name, skipping identical content, image-header checks, ranking order and normalisation, query-copy exclusion, repeatable tie order, rejection of broken features, duplicate counting, and refusing output outside `private/`. Two deliberately broken versions of the code (query copies not excluded; overwriting allowed) made the tests fail, so the tests do detect those faults.
 - `scripts/check.sh` passed with all 13 tests. Argument checks were run by hand: a missing archive, output outside `private/`, an invalid host and an inbox outside `private/` are all refused before any work starts.
 - Not verified since the move: a real transfer from the N900 and a full CLIP run on real photos with these repository versions. The October 9 transfer and October 20 matching results came from the earlier copies.
+
+## 2026-10-21: repository matcher review-page fix
+
+- Independent verification found that CLIP inference and ranking completed, but review-page generation failed because Python string formatting interpreted the CSS braces as replacement fields. The renderer now keeps the CSS literal, and a focused offline regression test covers the page content.
+- `scripts/check.sh` passes with all 14 tests. A repository-version CLIP run against the 29-photo private archive completed with 29 eligible candidates, unchanged source/query hashes, a complete result file, eight preview images and a parsed `review.html` whose image references all resolve.
+- This verifies the repository matcher on that private archive. It does not establish a general matching benchmark or new qualitative acceptance. A live N900 transfer with the repository copy and physical printing remain unverified.

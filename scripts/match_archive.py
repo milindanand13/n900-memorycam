@@ -81,6 +81,26 @@ def load_rgb(path):
         return ImageOps.exif_transpose(image).convert('RGB')
 
 
+def review_page(candidate_count, cards):
+    return (
+        '<!doctype html><html lang="en"><meta charset="utf-8">'
+        '<meta name="viewport" content="width=device-width,initial-scale=1">'
+        '<title>Memorycam matches</title><style>'
+        'body{background:#171717;color:#eee;font:18px system-ui;max-width:1500px;margin:40px auto;padding:0 24px}'
+        'h1{font:36px Georgia}p{max-width:850px;line-height:1.5;color:#ccc}'
+        '.photos{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px}figure{margin:0}'
+        'img{width:100%;height:340px;object-fit:contain;background:#222}figcaption{margin:12px 0 24px}'
+        'small{display:block;color:#aaa;overflow-wrap:anywhere;font-size:13px;margin-top:8px}'
+        '@media(max-width:850px){.photos{grid-template-columns:1fr}}</style>'
+        '<h1>Memorycam matches</h1>'
+        f'<p>One N900 photo searched against {candidate_count} unique archive photos using image features only. '
+        'The six closest matches, then one random pick for comparison (it may also be a match).</p>'
+        f'<div class="photos">{"".join(cards)}</div>'
+        '<p>Visual similarity, not a judgment of meaning. Originals are unchanged; these are private previews.</p>'
+        '</html>'
+    )
+
+
 def write_review(output, query, source, ranked, baseline):
     from PIL import Image
     assets = output / 'review-images'
@@ -98,24 +118,7 @@ def write_review(output, query, source, ranked, baseline):
         cards.append('<figure><img src="review-images/{}.jpg" alt="{}"><figcaption>{}<small>{}</small>'
                      '</figcaption></figure>'.format(i, html.escape(label), html.escape(label),
                                                      html.escape(caption)))
-    page = (
-        '<!doctype html><html lang="en"><meta charset="utf-8">'
-        '<meta name="viewport" content="width=device-width,initial-scale=1">'
-        '<title>Memorycam matches</title><style>'
-        'body{background:#171717;color:#eee;font:18px system-ui;max-width:1500px;margin:40px auto;padding:0 24px}'
-        'h1{font:36px Georgia}p{max-width:850px;line-height:1.5;color:#ccc}'
-        '.photos{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px}figure{margin:0}'
-        'img{width:100%;height:340px;object-fit:contain;background:#222}figcaption{margin:12px 0 24px}'
-        'small{display:block;color:#aaa;overflow-wrap:anywhere;font-size:13px;margin-top:8px}'
-        '@media(max-width:850px){.photos{grid-template-columns:1fr}}</style>'
-        '<h1>Memorycam matches</h1>'
-        '<p>One N900 photo searched against {} unique archive photos using image features only. '
-        'The six closest matches, then one random pick for comparison (it may also be a match).</p>'
-        '<div class="photos">{}</div>'
-        '<p>Visual similarity, not a judgment of meaning. Originals are unchanged; these are private previews.</p>'
-        '</html>'
-    ).format(len(ranked), ''.join(cards))
-    (output / 'review.html').write_text(page)
+    (output / 'review.html').write_text(review_page(len(ranked), cards))
 
 
 def main():
