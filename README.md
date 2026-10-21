@@ -1,6 +1,6 @@
 # n900-memorycam
 
-A Nokia N900 becomes a daily camera for a reflective journal. Each new photo is used to search my personal photo archive for an older image connected to it by look, meaning, time, season or place. Later that evening, a thermal printer prints the old photo next to the new one. The AI chooses which past moment to bring back; I decide what the connection means.
+A Nokia N900 becomes a daily camera for a reflective journal. Each new photo is used to search my personal photo archive for an older image connected to it by look, meaning, time, season or place. Later that evening, a thermal printer produces the old and new photos as two separate slips. The AI chooses which past moment to bring back; I decide what the connection means.
 
 Built for *Small Linux Devices, Large Language Models* (Parsons, Fall 2026).
 
@@ -13,23 +13,34 @@ Built for *Small Linux Devices, Large Language Models* (Parsons, Fall 2026).
 | N900 → Mac over SSH | ✅ Working over a phone hotspot |
 | Fresh photo transfer with checksum check | ✅ Working (`scripts/n900-fetch-photo.sh`) |
 | Test archive (29 older N900 photos, kept private) | ✅ Imported and checksum-verified |
-| Gemma 4 26B via Ollama on the Mac | ✅ Installed; inference and image analysis unverified |
-| Qwen3.5 4B via Ollama on the Mac | ✅ Short text inference test passed; image analysis unverified |
-| Photo matching | ⏳ Next |
+| Local visual matching | ✅ Five-query CLIP sample accepted for the prototype; not a general benchmark |
+| Daily photo selection | ⏳ Not started |
 | Printable photo pair | ⏳ Not started |
 | Thermal printing | ⏳ Not started |
-| Automatic upload and evening print queue | ⏳ Not started |
+| Unattended transfer, presence checks and scheduling | ⏳ Not started |
 
 See [docs/progress.md](docs/progress.md) for the verified log.
 
 ## How it works (planned)
 
 ```
-N900 camera ──SSH──▶ Mac: match against archive ──▶ photo pair layout ──▶ thermal printer (evening)
-                          (image embeddings + Gemma 4)
+N900 camera ──SSH──▶ Mac: match against archive ──▶ two photo slips ──▶ thermal printer (evening)
+                          (local image features)
 ```
 
-The N900 is the camera and client. With 256 MB of RAM it cannot run the selected model, so matching is planned to run on the Mac. Moving the model to a self-hosted cloud node is planned for later in the course.
+The N900 is the camera and SSH server; the Mac pulls photos from it and runs matching. With 256 MB of RAM, the N900 cannot run the selected model. A private five-query experiment ranked 603 unique archive images per query with CLIP image features; Milind accepted those sample pairings as sufficient for this prototype stage. This was a qualitative review, not a general benchmark or a claim that every result will be meaningful.
+
+The next hardware milestone is two separate physical photo prints after a printer is available. Daily selection, unattended transfer, scheduling, and separate checks that Milind and the N900 are home remain unfinished.
+
+## Checks
+
+From a fresh checkout, run:
+
+```bash
+scripts/check.sh
+```
+
+This public check needs no photographs, phone, model, or printer. It validates the repository structure, shell syntax, whitespace, and public/private file boundary. It does not reproduce the private visual-matching experiment or establish hardware behavior.
 
 ## Setup
 
@@ -49,7 +60,7 @@ You need a Mac, a Nokia N900 with a root shell and OpenSSH installed, and both o
    N900_HOST="PHONE_IP" scripts/n900-fetch-photo.sh 20260929_001.jpg
    ```
    It saves the photo in `private/inbox/`, which git ignores, and refuses to overwrite an existing file.
-4. To select a photo automatically, the inbox and archive must already contain every other photo on the phone. If those imports live elsewhere, point the script at their existing folders:
+4. To identify the sole unimported phone photo automatically, the inbox and archive must already contain every other photo on the phone. This is a transfer safeguard, not the unfinished daily photo-selection rule. If those imports live elsewhere, point the script at their existing folders:
    ```bash
    N900_HOST="PHONE_IP" \
      MEMORYCAM_INBOX="/absolute/path/to/inbox" \
@@ -63,7 +74,7 @@ You need a Mac, a Nokia N900 with a root shell and OpenSSH installed, and both o
 - The N900's clock was set to 2009 during the first fresh capture. It appears corrected after a later capture produced `20260929_001.jpg`, but earlier filenames, EXIF dates and file times remain unreliable. The fetch script selects a photo absent from the local inbox/archive instead of relying on dates.
 - Modern macOS SSH refuses the N900's host key without `HostKeyAlgorithms=+ssh-rsa`.
 - Paths containing spaces broke SSH's `ControlPath` option during development; the script avoids connection sharing for this reason.
-- `scripts/n900-fetch-photo.sh` uses macOS's `md5` command, so it runs on macOS only.
+- `scripts/n900-fetch-photo.sh` uses macOS's `md5` command, so live transfer runs on macOS only.
 
 ## Privacy
 
@@ -76,7 +87,8 @@ This project is co-authored with AI models, as the course requires. See [ATTRIBU
 - **GPT-6.1 Sol** (via OpenAI Codex): N900 SSH setup, transfer scripts and debugging
 - **GPT-6** (via OpenAI Codex): repository review and documentation corrections
 - **Claude Opus 5.5** (via Claude Code): repository setup, documentation and planning
-- **Gemma 4 26B** (local, via Ollama): image analysis at run time (planned)
+- **CLIP ViT-B/32** (local): direct image-feature matching in the accepted five-query prototype sample
+- **Gemma 4 26B** (local, via Ollama): earlier planned image analysis; not used in the accepted CLIP sample
 
 ## License
 

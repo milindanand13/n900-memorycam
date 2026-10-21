@@ -18,4 +18,20 @@ Only verified results are recorded here. Anything unconfirmed is marked as not y
 - Shell syntax and Git whitespace checks passed. Ten simulated transfer cases passed: one unknown photo, archive exclusion, paths with spaces, zero or multiple candidates, an explicit filename, checksum mismatch, an existing destination, a missing named photo, an unsafe filename, and an uppercase `.JPG` suffix. Failed transfers preserved existing files and removed temporary files. The simulation used the Mac's `/bin/sh`; this review did not reconnect to the N900.
 - Setup now explains the first named transfer and the existing inbox/archive required for automatic selection. Clock and model status distinguish the recorded evidence from pending verification.
 
-Not yet verified: Gemma inference, image analysis, matching, photo-pair layout, printing, automatic upload.
+At this September 29 stage, Gemma inference, image analysis, matching, photo-pair layout, printing, and automatic upload were not yet verified. The dated entries below record later progress.
+
+## 2026-10-20: visual-matching prototype accepted
+
+- A local CLIP ViT-B/32 experiment ranked 603 unique archive images for each of five preselected N900 query photos. Matching used image features rather than captions, dates, filenames, or folders.
+- Offline checks covered score ordering and normalization, invalid features, duplicate/query-copy exclusion, candidate coverage, finite scores, and unchanged source hashes. The photographs, model cache, and detailed comparison evidence remain private and are not part of this repository.
+- Milind reviewed the five-query comparison and accepted the pairings as working for this prototype stage. This is qualitative acceptance of that sample, not a general benchmark, proof that CLIP beats a baseline, or a guarantee of a meaningful memory.
+- Matching refinements are deferred. The next hardware milestone is two separate physical photo prints after a printer is available.
+
+Still unverified: daily query selection, unattended transfer, a general matching benchmark, printable layout, physical printing, scheduling, and separate detection that Milind and the N900 are home.
+
+## 2026-10-20: repository bootstrap and harness
+
+- Public AI instructions now state the project, verified state, privacy constraints, next milestone, working loop, and limits without depending on files outside this repository.
+- `scripts/check.sh` passed in the working repository and in a separate repository-only checkout. It checks required files, shell syntax, whitespace, and the public/private file boundary without photographs.
+- An independent fresh AI session read only the public repository, ran the check, and accurately restated the project, completed work, constraints, next milestone, and verification limits after wording corrections.
+- This repository check does not reconnect to the N900, rerun private CLIP inference, judge a pairing, or test a printer.
