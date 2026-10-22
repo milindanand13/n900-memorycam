@@ -7,8 +7,8 @@ cd "$repo_root"
 
 for file in .gitignore AGENTS.md ATTRIBUTION.md CODE_OF_CONDUCT.md LICENSE README.md \
     requirements.txt docs/progress.md scripts/check.sh scripts/n900-fetch-photo.sh \
-    scripts/transfer_photos.py scripts/match_archive.py \
-    tests/test_transfer_photos.py tests/test_match_archive.py; do
+    scripts/transfer_photos.py scripts/auto_pull.py scripts/match_archive.py \
+    tests/test_transfer_photos.py tests/test_auto_pull.py tests/test_match_archive.py; do
     [ -f "$file" ] || { printf 'Missing required file: %s\n' "$file" >&2; exit 1; }
 done
 

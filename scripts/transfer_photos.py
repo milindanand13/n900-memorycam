@@ -16,6 +16,9 @@ Close the connection afterwards with:
 
     ssh -S private/ssh-session/control -O exit root@PHONE_IP
 
+For unattended runs, pass --key with a dedicated passwordless key instead of
+opening a connection first (see scripts/auto_pull.py).
+
 Originals stay on the phone and local photos are never overwritten. Each file
 is checked against the phone's MD5 and its image header before it gets its
 final name. Photos already in the inbox or archive (by content, not by name)
@@ -128,7 +131,7 @@ def inside_private(path):
     return PRIVATE.resolve() in path.resolve().parents
 
 
-def main():
+def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--host", required=True, help="Current N900 IP address")
     parser.add_argument("--socket", type=Path, default=PRIVATE / "ssh-session" / "control")
@@ -136,7 +139,9 @@ def main():
     parser.add_argument("--inbox", type=Path, default=PRIVATE / "inbox", help="Destination under private/")
     parser.add_argument("--archive", type=Path, default=PRIVATE / "archive",
                         help="Folder of already imported photos to skip (under private/)")
-    args = parser.parse_args()
+    parser.add_argument("--key", type=Path,
+                        help="Passwordless SSH key; use instead of an open connection (--socket)")
+    args = parser.parse_args(argv)
     if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9.:-]*", args.host):
         parser.error("Use the phone's IP address or hostname.")
 
@@ -150,20 +155,27 @@ def main():
     logs = PRIVATE / "transfers"
     inbox.mkdir(parents=True, exist_ok=True)
     logs.mkdir(parents=True, exist_ok=True)
-    ssh = [
-        "ssh", "-S", str(args.socket), "-o", "BatchMode=yes",
-        "-o", "ConnectTimeout=10", "-o", "HostKeyAlgorithms=+ssh-rsa",
+    if args.key:
+        if not args.key.is_file():
+            parser.error("SSH key not found: {}".format(args.key))
+        login = ["-i", str(args.key), "-o", "IdentitiesOnly=yes", "-o", "ControlPath=none",
+                 "-o", "PubkeyAcceptedKeyTypes=+ssh-rsa"]
+    else:
+        login = ["-S", str(args.socket)]
+    ssh = ["ssh"] + login + [
+        "-o", "BatchMode=yes", "-o", "ConnectTimeout=10", "-o", "HostKeyAlgorithms=+ssh-rsa",
         "-o", "StrictHostKeyChecking=yes", "-o", "ServerAliveInterval=15",
         "-o", "ServerAliveCountMax=3", "root@" + args.host,
     ]
-    session_check = subprocess.run(
-        ["ssh", "-S", str(args.socket), "-O", "check", "root@" + args.host],
-        capture_output=True, text=True, timeout=15,
-    )
-    if session_check.returncode:
-        print("Open the temporary SSH connection in your terminal first (see --help). No photos copied.",
-              file=sys.stderr)
-        return 1
+    if not args.key:
+        session_check = subprocess.run(
+            ["ssh", "-S", str(args.socket), "-O", "check", "root@" + args.host],
+            capture_output=True, text=True, timeout=15,
+        )
+        if session_check.returncode:
+            print("Open the temporary SSH connection in your terminal first (see --help). No photos copied.",
+                  file=sys.stderr)
+            return 1
 
     batch = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S.%fZ")
     receipt_path = logs / (batch + "-receipt.json")

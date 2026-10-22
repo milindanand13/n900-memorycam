@@ -18,7 +18,8 @@ Built for *Small Linux Devices, Large Language Models* (Parsons, Fall 2026).
 | Daily photo selection | ⏳ Not started |
 | Printable photo pair | ⏳ Not started |
 | Thermal printing | ⏳ Not started |
-| Unattended transfer, presence checks and scheduling | ⏳ Not started |
+| Passwordless pull when the phone is on the same Wi-Fi | ✅ Tested by hand and through macOS launchd on Oct 22 (`scripts/auto_pull.py`); a nightly 1 AM job is installed but its first overnight run is not yet checked |
+| Presence checks and scheduling | ⏳ Not started |
 
 See [docs/progress.md](docs/progress.md) for the verified log.
 
@@ -88,6 +89,17 @@ ssh -S private/ssh-session/control -O exit root@PHONE_IP
 
 Each photo is checked against the phone's MD5 and its JPEG/PNG header before it gets its final name. If a filename is already taken by a different photo, the new one is saved with its checksum added to the name; nothing is overwritten and nothing is deleted from the phone. Every run writes a receipt to `private/transfers/`. Use `--source-root` for another photo folder on the phone (for example `/home/user/MyDocs/.images`).
 
+### Pull automatically when the phone is home
+
+`scripts/auto_pull.py` is for a scheduler to run. It asks whether the phone answers on SSH port 22; if not, it logs `phone not home` and exits quietly. If it does, it runs the same checked copy as above, using a dedicated passwordless key instead of an open connection, and only one run can happen at a time. Set the key up once:
+
+```sh
+ssh-keygen -t rsa -b 3072 -N "" -f ~/.ssh/n900_memorycam
+ssh -o HostKeyAlgorithms=+ssh-rsa root@PHONE 'mkdir -p /root/.ssh && cat >> /root/.ssh/authorized_keys && chmod 700 /root/.ssh && chmod 600 /root/.ssh/authorized_keys' < ~/.ssh/n900_memorycam.pub
+```
+
+Then run `python3 scripts/auto_pull.py --host PHONE --key ~/.ssh/n900_memorycam`. The phone's old SSH server needs an RSA key; the key has no passphrase, so keep it private and on this Mac only. A line per run goes to `private/auto-pull.log`.
+
 ### Find matches in your archive
 
 Install the matching dependencies once with `python3 -m pip install -r requirements.txt`. The first run needs `--download-model` to save CLIP (about 600 MB) into `private/models/`; later runs work offline:
@@ -120,6 +132,7 @@ This project is co-authored with AI models, as the course requires. See [ATTRIBU
 - **GPT-6.1 Sol** (via OpenAI Codex): N900 SSH setup, transfer scripts and debugging
 - **GPT-6** (via OpenAI Codex): repository review and documentation corrections
 - **Claude Opus 5.5** (via Claude Code): repository setup, documentation and planning
+- **Claude Sonnet 5.5** (via Claude Code): passwordless pull script, its tests and documentation
 - **CLIP ViT-B/32** (local): direct image-feature matching in the accepted five-query prototype sample
 - **Gemma 4 26B** (local, via Ollama): earlier planned image analysis; not used in the accepted CLIP sample
 
