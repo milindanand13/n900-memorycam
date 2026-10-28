@@ -1,9 +1,14 @@
 """Offline checks for scripts/transfer_photos.py. No phone, SSH or real photos needed."""
+from contextlib import redirect_stdout
 import hashlib
+import io
+import json
 from pathlib import Path
+import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / 'scripts'))
 import transfer_photos as transfer  # noqa: E402
@@ -101,6 +106,154 @@ class ContentChecks(unittest.TestCase):
         self.assertTrue(transfer.inside_private(transfer.PRIVATE / 'inbox'))
         self.assertFalse(transfer.inside_private(transfer.REPO_ROOT / 'inbox'))
         self.assertFalse(transfer.inside_private(transfer.PRIVATE / '..' / 'docs'))
+
+
+def listing_line(name, size, stamp='Oct 22 12:00'):
+    return '-rw-r--r--    1 user     users      {} {} {}'.format(size, stamp, name)
+
+
+class ListingChecks(unittest.TestCase):
+    def test_names_and_sizes_are_read(self):
+        text = listing_line('./b.jpg', 12) + '\n' + listing_line('./Camera/a.JPG', 5, 'Jan  1  2009') + '\n'
+        self.assertEqual(transfer.parse_listing(text), (
+            [('Camera/a.JPG', 5, 'Jan  1  2009'), ('b.jpg', 12, 'Oct 22 12:00')], []))
+
+    def test_one_odd_file_is_skipped_not_fatal(self):
+        text = '\n'.join([
+            listing_line('./good.jpg', 10),
+            listing_line('./photo one.jpg', 10),    # space
+            listing_line('./notes.txt', 10),        # not a photo
+            listing_line('./../etc/x.jpg', 10),     # climbs out
+            listing_line('./good.jpg', 10),         # repeated
+        ])
+        entries, skipped = transfer.parse_listing(text)
+        self.assertEqual([e[0] for e in entries], ['good.jpg'])
+        self.assertEqual(len(skipped), 4)
+
+    def test_something_that_is_not_a_listing_is_refused(self):
+        with self.assertRaises(ValueError):
+            transfer.parse_listing('d41d8cd98f00b204e9800998ecf8427e  ./a.jpg')
+        self.assertEqual(transfer.parse_listing(''), ([], []))
+
+
+class CacheChecks(unittest.TestCase):
+    def test_unchanged_local_files_are_not_hashed_again(self):
+        with tempfile.TemporaryDirectory() as folder:
+            photo = Path(folder) / 'p.jpg'
+            photo.write_bytes(JPEG)
+            cache = {}
+            with patch.object(transfer, 'md5_file', wraps=transfer.md5_file) as hashed:
+                transfer.local_checksums((Path(folder),), cache)
+                found = transfer.local_checksums((Path(folder),), cache)
+                self.assertEqual(hashed.call_count, 1)
+                self.assertEqual(set(found), {md5(JPEG)})
+                photo.write_bytes(JPEG + b'edited')
+                self.assertEqual(set(transfer.local_checksums((Path(folder),), cache)), {md5(JPEG + b'edited')})
+                self.assertEqual(hashed.call_count, 2)
+            photo.unlink()
+            transfer.local_checksums((Path(folder),), cache)
+            self.assertEqual(cache, {})
+
+    def test_damaged_cache_file_means_start_over(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / 'cache.json'
+            path.write_text('{"phone": ')
+            self.assertEqual(transfer.load_cache(path), {'phone': {}, 'local': {}})
+            transfer.save_cache(path, {'phone': {'a.jpg': [1, 'x', 'y']}, 'local': {}})
+            self.assertEqual(transfer.load_cache(path)['phone'], {'a.jpg': [1, 'x', 'y']})
+
+
+class FakePhone:
+    """Stands in for ssh: answers listing, checksum and download commands from a dict of files."""
+
+    def __init__(self, files, listing_works=True):
+        self.files, self.listing_works = files, listing_works
+        self.checksummed, self.downloaded = [], []
+
+    def __call__(self, argv, **kwargs):
+        command = argv[-1]
+        if 'stdout' in kwargs:
+            name = command.split('/')[-1].strip("'")
+            self.downloaded.append(name)
+            kwargs['stdout'].write(self.files[name])
+            return subprocess.CompletedProcess(argv, 0)
+        if 'ls -l' in command:
+            if not self.listing_works:
+                return subprocess.CompletedProcess(argv, 0, stdout=''.join(
+                    '{}  ./{}\n'.format(md5(data), name) for name, data in self.files.items()))
+            return subprocess.CompletedProcess(argv, 0, stdout=''.join(
+                listing_line('./' + name, len(data)) + '\n' for name, data in self.files.items()))
+        if 'for f in' in command:
+            names = list(self.files)
+        else:
+            names = [part.strip("'")[2:] for part in command.split('md5sum ')[1].split()]
+        self.checksummed.extend(names)
+        return subprocess.CompletedProcess(argv, 0, stdout=''.join(
+            '{}  ./{}\n'.format(md5(self.files[name]), name) for name in names))
+
+
+class RunChecks(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.private = Path(self.temp.name) / 'private'
+        self.key = Path(self.temp.name) / 'key'
+        self.key.write_text('placeholder')
+
+    def tearDown(self):
+        self.temp.cleanup()
+
+    def run_transfer(self, phone):
+        with patch.object(transfer, 'PRIVATE', self.private), \
+                patch.object(transfer.subprocess, 'run', side_effect=phone), redirect_stdout(io.StringIO()):
+            return transfer.main(['--host', 'phone.local', '--key', str(self.key)])
+
+    def receipts(self):
+        return sorted((self.private / 'transfers').glob('*-receipt.json'))
+
+    def test_odd_file_on_phone_does_not_stop_other_photos(self):
+        # The fake phone lists both files; the odd name must be skipped and never downloaded.
+        phone = FakePhone({'20261023_001.jpg': JPEG, 'photo one.jpg': JPEG + b'odd'})
+        self.assertEqual(self.run_transfer(phone), 0)
+        self.assertEqual(phone.downloaded, ['20261023_001.jpg'])
+        self.assertEqual([p.name for p in (self.private / 'inbox').iterdir()], ['20261023_001.jpg'])
+        receipt = json.loads(self.receipts()[0].read_text())
+        self.assertTrue(receipt['complete'])
+        self.assertEqual(len(receipt['skipped_phone_files']), 1)
+
+    def test_known_photos_are_not_checksummed_or_receipted_again(self):
+        phone = FakePhone({'20261023_001.jpg': JPEG})
+        self.assertEqual(self.run_transfer(phone), 0)
+        self.assertEqual(phone.checksummed, ['20261023_001.jpg'])
+        self.assertEqual(len(self.receipts()), 1)
+        phone.files['20261024_001.jpg'] = JPEG + b'new'
+        phone.checksummed.clear()
+        self.assertEqual(self.run_transfer(phone), 0)
+        self.assertEqual(phone.checksummed, ['20261024_001.jpg'])
+        self.assertEqual(len(self.receipts()), 2)
+        phone.checksummed.clear()
+        self.assertEqual(self.run_transfer(phone), 0)
+        self.assertEqual(phone.checksummed, [])
+        self.assertEqual(len(self.receipts()), 2)  # nothing new, so no new receipt
+
+    def test_unreadable_listing_falls_back_to_checksumming_everything(self):
+        phone = FakePhone({'20261023_001.jpg': JPEG}, listing_works=False)
+        self.assertEqual(self.run_transfer(phone), 0)
+        self.assertEqual(phone.downloaded, ['20261023_001.jpg'])
+
+    def test_corrupted_download_leaves_no_photo_and_fails(self):
+        phone = FakePhone({'20261023_001.jpg': JPEG})
+        original = phone.__call__
+
+        def corrupt(argv, **kwargs):
+            if 'stdout' in kwargs:
+                kwargs['stdout'].write(JPEG + b'damaged in transit')
+                return subprocess.CompletedProcess(argv, 0)
+            return original(argv, **kwargs)
+
+        self.assertEqual(self.run_transfer(corrupt), 1)
+        inbox = self.private / 'inbox'
+        self.assertEqual(list(inbox.iterdir()), [])
+        self.assertFalse(json.loads(self.receipts()[0].read_text())['complete'])
 
 
 if __name__ == '__main__':

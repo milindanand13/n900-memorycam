@@ -14,12 +14,14 @@ Built for *Small Linux Devices, Large Language Models* (Parsons, Fall 2026).
 | Single photo transfer with checksum check | ✅ Working (`scripts/n900-fetch-photo.sh`) |
 | Copy all new photos with checksum checks | ✅ Working when started by hand (`scripts/transfer_photos.py`): 131/131 files verified on the real phone on Oct 9, before the script moved into this repository; not rerun on the phone since the move |
 | Test archive (29 older N900 photos, kept private) | ✅ Imported and checksum-verified |
-| Local visual matching | ✅ Prototype (`scripts/match_archive.py`): five hand-picked N900 photos matched against 603 of my portfolio photos; I accepted those pairs. Not yet tested on my full personal archive |
+| Local visual matching | ✅ Prototype (`scripts/match_archive.py`): five initial queries against 603 portfolio photos, then twelve supplied queries against a 905-image personal sample. I accepted the reviewed samples; later curated comparisons await review. Full library not indexed |
 | Daily photo selection | ⏳ Not started |
 | Printable photo pair | ⏳ Not started |
 | Thermal printing | ⏳ Not started |
-| Passwordless pull when the phone is on the same Wi-Fi | ✅ Tested by hand and through macOS launchd on Oct 22 (`scripts/auto_pull.py`); a nightly 1 AM job is installed but its first overnight run is not yet checked |
-| Presence checks and scheduling | ⏳ Not started |
+| Passwordless pull when the phone is on the same Wi-Fi | ✅ New photos copied through launchd on Oct 22; unattended overnight run on Oct 23 completed with no new photos |
+| Arrival checks every two minutes | ✅ 120-second launchd job installed; a new receipt on Oct 25 records 20 newly copied photos. A deliberate Wi-Fi reconnect test remains pending |
+| Photos stored in Pictures by week/date | ✅ 132 originals migrated and independently verified; subsequent scheduled lookup found all 98 phone photos there without duplicates. A genuinely new photo copied automatically into Pictures on Oct 27; later checks found it already present |
+| Separate person-presence check and print schedule | ⏳ Not started |
 
 See [docs/progress.md](docs/progress.md) for the verified log.
 
@@ -30,9 +32,9 @@ N900 camera ──SSH──▶ Mac: match against archive ──▶ two photo sl
                           (local image features)
 ```
 
-The N900 is the camera and SSH server; the Mac pulls photos from it and runs matching. With 256 MB of RAM, the N900 cannot run the selected model. Matching uses CLIP image features only, so captions, filenames and dates do not affect which photo comes back. A private five-query experiment ranked 603 unique photos (my portfolio photos, standing in for the full archive) per query; I accepted those sample pairings as good enough for this prototype stage. This was a qualitative review, not a general benchmark or a claim that every result will be meaningful.
+The N900 is the camera and SSH server; the Mac pulls photos from it and runs matching. With 256 MB of RAM, the N900 cannot run the selected model. Matching uses CLIP image features only, so captions, filenames and dates do not affect which photo comes back. The initial five-query experiment used 603 portfolio photos. A later twelve-query comparison used 905 personal stills; I accepted the reviewed sample pairings. Six separate local A/B preferences favoured CLIP over random, but do not establish a Google Photos preference rate. The latest manually curated archive has 205 images; adding 40 eligible images left all twelve leading results unchanged. New pairings await my review. None of these convenience samples establishes full-library reliability or memory value. Matching still requires an explicitly supplied query.
 
-The next hardware milestone is two separate physical photo prints after a printer is available. Daily selection, unattended transfer, scheduling, and separate checks that Milind and the N900 are home remain unfinished.
+The next hardware milestone is two separate physical photo prints after a printer is available. A two-minute and nightly transfer job is installed. A new scheduled photo import into Pictures was verified October 27; exact arrival latency remains untested. Daily selection, print scheduling, and separate checks that Milind and the N900 are home remain unfinished.
 
 ## Checks
 
@@ -44,7 +46,7 @@ scripts/check.sh
 
 This public check needs only Python 3 and NumPy (`python3 -m pip install numpy`): no photographs, phone, model, or printer. It validates the repository structure, shell and Python syntax, whitespace, and the public/private file boundary, and runs the offline tests in `tests/`:
 
-- **Transfer:** the phone's file list is parsed strictly (unsafe paths, non-photos and repeats are refused), a reused filename never overwrites an existing photo, identical content is not saved twice, image headers must match the file type, and photos can only be saved under `private/`.
+- **Transfer:** the phone's file list is parsed strictly (unsafe paths, non-photos and repeats are refused), a reused filename never overwrites an existing photo, identical content is not saved twice, image headers must match the file type, and destinations are restricted to `private/` or the explicitly configured external library. Organization checks cover calendar week boundaries, unreliable dates, copy verification, collision preservation, the scheduler lock, old-path compatibility and repeated future transfers.
 - **Matching:** the closest image ranks first, copies of the query photo are left out, ties come out in the same order every run, broken image features are refused, exact duplicates in the archive count once, and results can only be saved under `private/`.
 
 It does not connect to the N900, run CLIP on real photos, judge whether a pair is meaningful, or test a printer.
@@ -78,7 +80,7 @@ You need a Mac, a Nokia N900 with a root shell and OpenSSH installed, and both o
 
 ### Copy all new photos
 
-`scripts/transfer_photos.py` copies every photo on the phone that is not already in `private/inbox/` or `private/archive/`, compared by content rather than filename. You open the SSH connection yourself so the password is typed only in your terminal:
+`scripts/transfer_photos.py` copies every photo on the phone that is not already in the configured Pictures library or legacy `private/inbox/` and `private/archive/`, compared by content rather than filename. You open the SSH connection yourself so the password is typed only in your terminal:
 
 ```bash
 mkdir -p private/ssh-session && chmod 700 private/ssh-session
@@ -87,7 +89,15 @@ python3 scripts/transfer_photos.py --host PHONE_IP
 ssh -S private/ssh-session/control -O exit root@PHONE_IP
 ```
 
-Each photo is checked against the phone's MD5 and its JPEG/PNG header before it gets its final name. If a filename is already taken by a different photo, the new one is saved with its checksum added to the name; nothing is overwritten and nothing is deleted from the phone. Every run writes a receipt to `private/transfers/`. Use `--source-root` for another photo folder on the phone (for example `/home/user/MyDocs/.images`).
+Each photo is checked against the phone's MD5 and its JPEG/PNG header before it gets its final name. If a filename is already taken by a different photo, the new one is saved with its checksum added to the name; nothing is overwritten and nothing is deleted from the phone. A run that copies something, or fails, writes a receipt to `private/transfers/`; a check that finds nothing new writes none. A phone file with an unusual name (spaces, odd characters, not a photo) is skipped and listed in the receipt and output, so it cannot block the other photos. To keep the two-minute check light, the phone is asked only for names and sizes, and for checksums of photos it has not seen before; checksums are remembered in ignored `private/md5-cache.json` (delete it to force a full recheck). Use `--source-root` for another photo folder on the phone (for example `/home/user/MyDocs/.images`).
+
+### Keep Nokia photographs in Pictures
+
+Run `python3 scripts/organize_photos.py` once in your Terminal. The default destination is `~/Pictures/Personal/Nokia-N900/`, with ISO Monday-to-Sunday week folders above daily folders, for example `2026-W43/2026-10-22/`. A date comes from the camera filename, rather than the transfer date. Dates before the clock correction on September 29, 2026, invalid dates, future dates and photos without a dated camera filename go under `Date-unverified/`; originals and metadata are not rewritten.
+
+The migration includes existing photos in the project's inbox/archive/nokia-images and the user's `Pictures/Nokia` folder. It verifies SHA-256 before replacing old photo files with links to the organized originals. Non-photo files are preserved; old experiment paths still work. All sources must copy successfully before old paths are switched. It takes the same lock as the automatic pull, so they cannot run simultaneously. A partial migration is safe to retry.
+
+Only after the migration succeeds does it save ignored `private/photo-library.json`. Both manual batch transfers and the existing scheduled pull read this setting every run, deduplicate against the whole library and place new files in the same week/date layout. No scheduler reinstall is necessary. With no configuration, the old destination remains in use. Transfer receipts and code stay in the project. To use a different external folder, pass `--library /absolute/path`; do not put it inside the repository. The real Pictures migration was independently verified October 25, and a scheduled new-photo copy there was verified October 27. A different installation still needs its own live verification.
 
 ### Pull automatically when the phone is home
 
@@ -99,6 +109,24 @@ ssh -o HostKeyAlgorithms=+ssh-rsa root@PHONE 'mkdir -p /root/.ssh && cat >> /roo
 ```
 
 Then run `python3 scripts/auto_pull.py --host PHONE --key ~/.ssh/n900_memorycam`. The phone's old SSH server needs an RSA key; the key has no passphrase, so keep it private and on this Mac only. A line per run goes to `private/auto-pull.log`.
+
+#### Upgrade an existing nightly Mac job to arrival checks
+
+The scheduler belongs to macOS (`launchd`), and the transfer code belongs to this repository. ChatGPT, Codex, an internet service, and a language model are not needed to run it.
+
+If `com.milind.memorycam.autopull` is already installed in your user's `Library/LaunchAgents` folder, run this from the repository root, using the Python interpreter specified in that job:
+
+```sh
+python3 scripts/install_autopull.py
+```
+
+This preserves the existing phone hostname, SSH key, log paths and nightly slots. It adds a check every 120 seconds while the Mac is awake and a check when the job loads at login. `caffeinate -i` prevents idle sleep only while a check/transfer is running. There is no permanent sleep prevention and no change to the phone or its Wi-Fi settings. New photos normally arrive on the next check after the phone becomes reachable; its own Wi-Fi reconnection can add a delay. The existing pinned SSH host key still verifies the device before any transfer.
+
+The installer saves the previous configuration and a preview in ignored `private/autopull-setup/`. `--prepare-only` prepares these without changing the live job. An active transfer is left alone; retry the installer after it finishes. If the new job cannot load, the installer attempts to restore the previous configuration and schedule. A denied file write leaves the installed schedule alone.
+
+The Mac must be powered on, logged in, awake and able to reach the N900. Sleep pauses interval checks; calendar jobs missed during sleep can run on waking. A closed or sleeping laptop is not a reliable immediate receiver. Use a computer that stays on at home if transfer must work while the laptop is away or closed. Reachability does not independently establish that the photographer is home and does not trigger printing.
+
+To verify activation, inspect `launchctl print gui/$(id -u)/com.milind.memorycam.autopull` for the 120-second interval. Then take a new N900 photo, reconnect it to home Wi-Fi, leave the Mac awake, and check `private/auto-pull.log` and the latest receipt in `private/transfers/`. A repeated check should report no new copies. Offline checks do not establish a live arrival transfer.
 
 ### Find matches in your archive
 
@@ -123,7 +151,7 @@ The archive folder is searched recursively and read in place; photos are never m
 
 ## Privacy
 
-Personal photos never go in this repository. They stay in `private/`, which is ignored by git. Examples in the docs use non-personal images.
+Personal photos never go in Git. They live in the configured external Pictures library after migration; earlier imports and compatibility links are under ignored `private/`. Model caches, receipts and private configuration stay under `private/`. Examples in the docs use non-personal images.
 
 ## AI co-authorship
 

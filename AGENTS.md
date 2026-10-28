@@ -13,14 +13,16 @@ Verified so far:
 - a private archive imported and checksum-verified;
 - a local CLIP visual-matching prototype, `scripts/match_archive.py`, that ranked 603 unique portfolio photos for each of five hand-picked queries; Milind accepted those five sample pairings as sufficient for this prototype stage.
 
-The five-query result is a qualitative sample, not a general benchmark or a guarantee of a meaningful memory. The candidates were portfolio photos standing in for the full personal archive. Photographs, model weights and results stay in `private/` and are not required to check this repository.
+The five-query result is a qualitative sample, not a general benchmark or a guarantee of a meaningful memory. The candidates were portfolio photos standing in for the full personal archive. Photographs are private and may live in the configured external Pictures library; model weights and results stay in ignored `private/`. None are required to check this repository.
 
-Not yet verified: daily photo selection, unattended transfer, a general matching benchmark, printable layout, physical printing, scheduling, and separate detection that Milind and the N900 are both home. The next hardware milestone is two separate physical photo prints, after a printer is available. Do not implement printing or home automation unless explicitly asked.
+Additional verified state, October 28: a genuinely new phone photograph copied automatically into the configured Pictures library on October 27 and later checks confirmed no recopy. A 905-image personal pilot was qualitatively accepted; separate six-pair local A/B votes must not be described as a Google Photos preference rate. Latest curated comparison: 205 images and twelve supplied queries; forty added images changed none of the leading matches. New curated pairs remain unreviewed. Archive direction favours context-rich photos; do not infer identity or emotional value.
+
+Not yet verified: daily photo selection, controlled arrival latency, a general matching benchmark, printable layout, physical printing, nighttime print scheduling, and separate detection that Milind and the N900 are both home. The next hardware milestone is two separate physical photo prints, after a printer is available. Do not implement printing or home automation unless explicitly asked.
 
 ## Working rules
 
 - Make the smallest requested change and preserve existing work.
-- Never commit photos, screenshots containing them, passwords, credentials, network addresses, model caches, chat archives, or private notes. Photos belong under `private/`, which Git ignores.
+- Never commit photos, screenshots containing them, passwords, credentials, network addresses, model caches, chat archives, or private notes. Runtime data stays under ignored `private/`. After `scripts/organize_photos.py` completes, original photos live in the explicitly configured external Pictures library, with compatibility links at old project paths. Keep that external destination out of Git too.
 - Keep verified results and proposals separate. A passing offline check does not prove phone connectivity, matching quality, or physical printing.
 - The N900 runs BusyBox `ash`; phone-side commands must be POSIX `sh`.
 - Apply `HostKeyAlgorithms=+ssh-rsa` only when connecting to the legacy N900 SSH server.

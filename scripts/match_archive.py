@@ -146,12 +146,13 @@ def main():
     output.mkdir(parents=True, exist_ok=True)
     cache.mkdir(parents=True, exist_ok=True)
 
-    paths = sorted(p for p in source.rglob('*') if p.is_file() and p.suffix.lower() in IMAGE_SUFFIXES)
+    files = [p for p in source.rglob('*') if p.is_file()]
+    paths = sorted(p for p in files if p.suffix.lower() in IMAGE_SUFFIXES)
     records, duplicates = unique_images(paths, source)
     if not records:
         raise SystemExit('No photos found in the archive folder.')
     query_hash = sha256(query)
-    print(json.dumps({'files': len(paths), 'unique_images': len(records),
+    print(json.dumps({'files': len(paths), 'skipped_files': len(files) - len(paths), 'unique_images': len(records),
                       'duplicate_copies': len(duplicates)}), flush=True)
 
     import torch
