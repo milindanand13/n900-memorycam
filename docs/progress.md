@@ -91,3 +91,15 @@ Still unverified: daily query selection, unattended transfer, a general matching
 - Audit found two ways the two-minute check could fail or waste effort. (1) One phone file with an unusual name made the whole run fail; such files are now skipped and reported. (2) Each check made the phone checksum every photo and the Mac rehash the whole library; both sides now remember checksums (name, size and date on the phone; size and modified time on the Mac), and a check with nothing new writes no receipt.
 - Added tests for the skip, the remembered checksums, the fallback to the old full checksum when the phone's listing is not understood, and a corrupted download leaving no photo. `scripts/check.sh` passes with 44 tests.
 - NOT verified on the real phone: the phone was unreachable. The first live run rebuilds the phone cache with one full checksum pass; check `private/auto-pull.log` and the next receipt.
+
+## 2026-10-28: daily photo choice written
+
+- Added `scripts/daily_choice.py` and `tests/test_daily_choice.py`. Rule: that day's photos by camera-filename date; drop too dark, too blurry or near-copy shots; pick the most scene-like by a CLIP prompt score. All-unusable days still use the best photo. A day with no photo uses the best usable older library photo that was never chosen; `--record` keeps a ledger so no photo repeats and a repeated run returns the same photo. Dry-run prints candidates and saves nothing.
+- `scripts/check.sh` passes with 57 tests, offline with synthetic data. Removing the all-unusable fallback made the new tests fail. A dry run on three real dates (13 photos, one dark photo, no photo) ran with the local model and cached features.
+- NOT verified: that the chosen photos are good ones (no one has judged them), the tuning of the blur, brightness and near-copy limits and the scene prompts, the `--record` ledger on a real night, and any scheduled or unattended run. Nothing was printed.
+
+## 2026-10-29: daily photo choice tuned after review
+
+- Milind judged the first picks: one was a tight close-up, one too dark. Dark photos are now lifted before CLIP scores them, a dark photo loses up to 0.03 score (none at mean grey 70 or above), and the hard too-dark cutoff fell from 15 to 8. A small `CLOCK_FIXES` list in `scripts/daily_choice.py` lets four checked wrong-clock filename dates count as their real day without moving any file.
+- `scripts/check.sh` passes with 64 tests; switching each new rule off makes its test fail. Real dry runs: three days unchanged, and the first no-photo stand-in changed from a dark night photo to a lit group photo.
+- NOT done: the close-up problem (a tight crop of a few people still scores well; a penalty is on hold), any judgement of the picks beyond these, the `--record` ledger on a real night, and any unattended run. Nothing was printed.

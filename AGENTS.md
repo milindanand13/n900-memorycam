@@ -17,7 +17,7 @@ The five-query result is a qualitative sample, not a general benchmark or a guar
 
 Additional verified state, October 28: a genuinely new phone photograph copied automatically into the configured Pictures library on October 27 and later checks confirmed no recopy. A 905-image personal pilot was qualitatively accepted; separate six-pair local A/B votes must not be described as a Google Photos preference rate. Latest curated comparison: 205 images and twelve supplied queries; forty added images changed none of the leading matches. New curated pairs remain unreviewed. Archive direction favours context-rich photos; do not infer identity or emotional value.
 
-Not yet verified: daily photo selection, controlled arrival latency, a general matching benchmark, printable layout, physical printing, nighttime print scheduling, and separate detection that Milind and the N900 are both home. The next hardware milestone is two separate physical photo prints, after a printer is available. Do not implement printing or home automation unless explicitly asked.
+Daily photo selection (`scripts/daily_choice.py`) is implemented and tested offline with a dry run on real photos, but its picks have not been judged. Not yet verified: unattended daily selection, controlled arrival latency, a general matching benchmark, printable layout, physical printing, nighttime print scheduling, and separate detection that Milind and the N900 are both home. The next hardware milestone is two separate physical photo prints, after a printer is available. Do not implement printing or home automation unless explicitly asked.
 
 ## Working rules
 

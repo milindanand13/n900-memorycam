@@ -15,7 +15,7 @@ Built for *Small Linux Devices, Large Language Models* (Parsons, Fall 2026).
 | Copy all new photos with checksum checks | ✅ Working when started by hand (`scripts/transfer_photos.py`): 131/131 files verified on the real phone on Oct 9, before the script moved into this repository; not rerun on the phone since the move |
 | Test archive (29 older N900 photos, kept private) | ✅ Imported and checksum-verified |
 | Local visual matching | ✅ Prototype (`scripts/match_archive.py`): five initial queries against 603 portfolio photos, then twelve supplied queries against a 905-image personal sample. I accepted the reviewed samples; later curated comparisons await review. Full library not indexed |
-| Daily photo selection | ⏳ Not started |
+| Daily photo selection | 🟡 Written and tested offline (`scripts/daily_choice.py`), dry-run on real photos; not yet run unattended or with a printer. The rule is untuned and untested for quality |
 | Printable photo pair | ⏳ Not started |
 | Thermal printing | ⏳ Not started |
 | Passwordless pull when the phone is on the same Wi-Fi | ✅ New photos copied through launchd on Oct 22; unattended overnight run on Oct 23 completed with no new photos |
@@ -139,6 +139,14 @@ python3 scripts/match_archive.py --download-model \
 
 The archive folder is searched recursively and read in place; photos are never moved, changed or uploaded. Results go to a new folder under `private/matches/`: `result.json` holds the full ranking, and `review.html` shows the query, the six closest matches and one random pick for comparison. Image features are cached in `private/features/`, so later runs against the same archive only process new photos. If your photos already live outside the repository, you can make `private` a symlink to that folder.
 
+### Choose the day's photo
+
+```bash
+python3 scripts/daily_choice.py --date 2026-10-24
+```
+
+A dry run: it prints the chosen photo and every photo it considered, and saves nothing. The rule: take the photos whose camera filename has that date; drop any that are near-black, too blurry or a near copy of a later shot that day; then pick the one CLIP scores as most scene-like (a place, an activity, people in context, not a mirror selfie or object close-up). CLIP sees dark photos lifted to a readable brightness, and a dark photo loses a little score so a lit one wins when the two are close. If every photo fails those checks, the best one is still used. On a day with no photo, the stand-in is the best usable older photo in the library that has never been chosen. Exit status 2 means the library has nothing left. It uses the CLIP model and feature cache from `match_archive.py`, plus the CLIP tokenizer files in `private/models/clip-tokenizer/` (a local copy of the same BPE vocabulary; the model download does not include them). Add `--record` only when the choice is really used: it appends to ignored `private/daily-choice.json`, so the same photo is never chosen twice and a repeated run on the same date returns the same photo. The stand-in pool excludes photos with unverified dates, except filename dates listed in `CLOCK_FIXES` (a few wrong-clock dates from the N900's September clock reset that were checked against other photos).
+
 ## Known behaviour
 
 - The N900's clock was set to 2009 during the first fresh capture. It appears corrected after a later capture produced `20260929_001.jpg`, but earlier filenames, EXIF dates and file times remain unreliable. The fetch script selects a photo absent from the local inbox/archive instead of relying on dates.
@@ -147,7 +155,7 @@ The archive folder is searched recursively and read in place; photos are never m
 - `scripts/n900-fetch-photo.sh` uses macOS's `md5` command, so live transfer runs on macOS only. `scripts/transfer_photos.py` computes checksums in Python instead.
 - Matching only removes exact byte-for-byte duplicates. Near-identical frames (two shots of the same scene) can both rank near the top, and different queries can return the same archive photo.
 - A high match score means the images look alike to CLIP. It is not a probability, and it says nothing about whether the pair means anything to me.
-- Choosing the day's photo is still done by hand.
+- `scripts/daily_choice.py` chooses the day's photo (see below). Its blur, brightness and near-copy limits and its CLIP "scene-like" score are untuned first guesses, and no one has judged whether its picks are good.
 
 ## Privacy
 
