@@ -15,12 +15,13 @@ Built for *Small Linux Devices, Large Language Models* (Parsons, Fall 2026).
 | Copy all new photos with checksum checks | ✅ Working when started by hand (`scripts/transfer_photos.py`): 131/131 files verified on the real phone on Oct 9, before the script moved into this repository; not rerun on the phone since the move |
 | Test archive (29 older N900 photos, kept private) | ✅ Imported and checksum-verified |
 | Local visual matching | ✅ Prototype (`scripts/match_archive.py`): five initial queries against 603 portfolio photos, then twelve supplied queries against a 905-image personal sample. I accepted the reviewed samples; later curated comparisons await review. Full library not indexed |
-| Daily photo selection | 🟡 Written and tested offline (`scripts/daily_choice.py`), dry-run on real photos; not yet run unattended or with a printer. The rule is untuned and untested for quality |
+| Daily photo selection | 🟡 Written and tested offline (`scripts/daily_choice.py`). Initial picks were rejected; darkness handling and checked clock corrections were revised. The close-up problem and unattended nightly run remain open |
 | Printable photo pair | 🟡 Photo slips print and the look is tuned by eye on real prints (Nov 1): Floyd-Steinberg dither, printer darkness 8 of 8, gamma 0.8, contrast 1.2, sharpen 50, 576 dots wide. Two-slip layout and automation not done |
 | Thermal printing | 🟡 Volcora 80 mm (V-WLPR5) on Wi-Fi; text and photo slips printed Nov 1. Needs the raw cut command, and jobs must not be sent back to back (the printer then prints garbage) |
 | Passwordless pull when the phone is on the same Wi-Fi | ✅ New photos copied through launchd on Oct 22; unattended overnight run on Oct 23 completed with no new photos |
 | Arrival checks every two minutes | ✅ 120-second launchd job installed; a new receipt on Oct 25 records 20 newly copied photos. A deliberate Wi-Fi reconnect test remains pending |
 | Photos stored in Pictures by week/date | ✅ 132 originals migrated and independently verified; subsequent scheduled lookup found all 98 phone photos there without duplicates. A genuinely new photo copied automatically into Pictures on Oct 27; later checks found it already present |
+| Separate manual photo-printing desk | 🟡 Local dark-mode draft built separately; direct owner random printing, upload/caption/date, private durable phone inbox and login startup. Software and synthetic hosted delivery checked; installed iPhone Share Sheet and paper verification remain pending |
 | Separate person-presence check and print schedule | ⏳ Not started |
 
 See [docs/progress.md](docs/progress.md) for the verified log.
@@ -34,7 +35,17 @@ N900 camera ──SSH──▶ Mac: match against archive ──▶ two photo sl
 
 The N900 is the camera and SSH server; the Mac pulls photos from it and runs matching. With 256 MB of RAM, the N900 cannot run the selected model. Matching uses CLIP image features only, so captions, filenames and dates do not affect which photo comes back. The initial five-query experiment used 603 portfolio photos. A later twelve-query comparison used 905 personal stills; I accepted the reviewed sample pairings. Six separate local A/B preferences favoured CLIP over random, but do not establish a Google Photos preference rate. The latest manually curated archive has 205 images; adding 40 eligible images left all twelve leading results unchanged. New pairings await my review. None of these convenience samples establishes full-library reliability or memory value. Matching still requires an explicitly supplied query.
 
-The next hardware milestone is two separate physical photo prints on the Volcora 80 mm printer (text test over Wi-Fi works). A two-minute and nightly transfer job is installed. A new scheduled photo import into Pictures was verified October 27; exact arrival latency remains untested. Daily selection, print scheduling, and separate checks that Milind and the N900 are home remain unfinished.
+The next hardware milestone is a verified two-slip nightly run on the Volcora 80 mm printer. Manual text and tuned photo slips printed on November 1. A two-minute and nightly transfer job is installed. A new scheduled photo import into Pictures was verified October 27; exact arrival latency remains untested. Daily selection, print scheduling, and separate checks that Milind and the N900 are home remain unfinished.
+
+## Manual printing desk
+
+A separate private printing desk supports immediate random prints from eligible Nokia or personal-archive photos, plus user uploads with an optional caption and capture date. Its receipt preview sits above a printer illustration in a dark workspace. The no-generated-caption rule for the nightly photo-pair ritual is unchanged; manual captions are entered by the person printing.
+
+The desk keeps owner archives private on the server. Visitors receive no personal catalogue, thumbnails, random image or queue details. Public visitor printing is not enabled. The eventual public version still needs a decision about whether visitors use their own printer or may submit to the owner's printer.
+
+A separate authenticated online inbox can hold a deliberately shared phone photo while the Mac is unavailable. After the Mac wakes or the owner logs in, the desk collects it into a persistent local queue. Connection failures before sending printer commands wait and retry. Possible partial output pauses the printer for a paper check and never replays automatically. Images leave online storage after a final acknowledgement. The printer remains on the local network.
+
+The private desk has 22 local checks and six inbox checks. Live hosted delivery was verified with one synthetic image and an isolated preview-only consumer. This does not establish installed iPhone execution, a physical Mac power-off test or the appearance of a paper slip. The desk, private inbox configuration and personal data are outside this public checkout; these status notes do not make the website installable from this repository.
 
 ## Checks
 

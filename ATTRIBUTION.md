@@ -15,7 +15,7 @@ Work done entirely by hand has no trailer.
 | Model | Tool | Role |
 |---|---|---|
 | GPT-6.1 Sol | OpenAI Codex | N900 SSH connection, photo transfer scripts, archive import, debugging, repository bootstrap and public checks |
-| GPT-6 | OpenAI Codex | Repository review, simulated transfer checks, documentation corrections |
+| GPT-6 | OpenAI Codex | Repository review, simulated transfer checks, documentation corrections; separate private manual printing desk and durable phone inbox, with public status notes |
 | Claude Opus 5.5 | Claude Code | Repository setup, README and documentation, planning, moving the transfer and matching scripts into the repository with offline tests |
 | Claude Sonnet 5.5 | Claude Code | Passwordless key setup, `scripts/auto_pull.py` (phone-home check, retries, lock), its offline tests and documentation |
 | CLIP ViT-B/32 | Local inference | Direct image-feature matching for the accepted five-query prototype sample |
