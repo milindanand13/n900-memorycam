@@ -43,3 +43,7 @@ The separate owner-private desk supports iPhone Photos Share Sheet and native ca
 7. Before committing, inspect the full staged diff and tracked-file list for private data.
 
 `scripts/check.sh` is repository-only and needs Python 3 with NumPy: it checks required public files, shell and Python syntax, runs the offline tests in `tests/`, checks whitespace, and confirms no private folder, photo or feature file is tracked. It does not connect to the N900, run CLIP, inspect private photographs, or test a printer. When you change transfer or matching logic, add or update a test in `tests/` that fails without your change.
+
+## November 4: three-part scope
+
+Milind defined the daily N900/archive journaling ritual as the core, the private owner printing desk as the second part, and a new public QR guest note/photo/camera site as the third. Guests are explicitly intended to submit to Milind's printer at class presentations and parties. Use docs/project-plan.md for the current scope. Preserve the separate guest/owner security boundaries and reuse the serialized queue. Guest source is maintained separately through Sites; do not publish private owner code or unrelated local implementation commits. New guest-route paper, QR scanning and destination-network acceptance remain separate from the existing owner phone-to-paper verification.

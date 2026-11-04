@@ -6,6 +6,18 @@ Built for *Small Linux Devices, Large Language Models* (Parsons, Fall 2026).
 
 > Working prototype verified through physical prints; device documentation photograph still pending.
 
+## Three parts of Memorycam
+
+The daily journaling ritual is the core thesis. The private owner desk and the guest website extend the same printer:
+
+| Part | What it does | State |
+| --- | --- | --- |
+| Daily ritual | On arriving home with the N900, one daily image and one archive partner print as separate journaling prompts | Working and physically demonstrated. Controlled sleep/arrival and Wi-Fi reliability remain open |
+| Private owner desk | Print a shared phone photo, an uploaded archive photo, or a photograph captured through the website | Owner phone sharing and native camera-to-paper physically verified November 4 |
+| Public guest site | At a class presentation or party, scan a QR, write a note or choose/take a photo, preview it and send it to my printer | Dedicated landing/composer and event relay built November 4. Printing stays closed pending real guest-route acceptance |
+
+The guest site is a separate surface under the Memorycam identity. It reuses the private inbox and existing queue without exposing my archive or owner setup. See [the project plan](docs/project-plan.md) for acceptance and presentation preparation.
+
 ## Status
 
 | Part | State |
@@ -22,7 +34,7 @@ Built for *Small Linux Devices, Large Language Models* (Parsons, Fall 2026).
 | Arrival checks every two minutes | ✅ 120-second launchd job installed; a new receipt on Oct 25 records 20 newly copied photos. A deliberate Wi-Fi reconnect test remains pending |
 | Photos stored in Pictures by week/date | ✅ 132 originals migrated and independently verified; subsequent scheduled lookup found all 98 phone photos there without duplicates. A genuinely new photo copied automatically into Pictures on Oct 27; later checks found it already present |
 | Separate manual photo-printing desk | ✅ Owner iPhone Photos Share Sheet and native camera-to-paper verified November 4. Local draft and private inbox remain outside this checkout |
-| Presence and daily timing | 🟡 Arrival-triggered current-day pair enabled; N900 SSH reachability is the presence proxy. An iPhone home-network gate is now implemented locally; independent person identification and controlled sleep/arrival timing remain unverified |
+| Presence and daily timing | 🟡 Arrival-triggered current-day pair enabled; N900 SSH reachability is the presence proxy. The local routine also requires the iPhone to respond with its saved network identity; Wi-Fi absence/return was verified November 4. Independent person identification and controlled sleep/arrival timing remain unverified |
 
 See [docs/progress.md](docs/progress.md) for the verified log.
 
@@ -41,13 +53,13 @@ The local daily routine checks every two minutes while the Mac is awake and logg
 
 A separate private printing desk supports immediate random prints from eligible Nokia or personal-archive photos, plus user uploads with an optional caption and capture date. Its receipt preview sits above a printer illustration in a dark workspace. The no-generated-caption rule for the nightly photo-pair ritual is unchanged; manual captions are entered by the person printing.
 
-The desk keeps owner archives private on the server. Visitors receive no personal catalogue, thumbnails, random image or queue details. Public visitor printing is not enabled. The eventual public version still needs a decision about whether visitors use their own printer or may submit to the owner's printer.
+The desk keeps owner archives private on the server. Visitors receive no personal catalogue, thumbnails, random image or queue details. A separate guest site is intended to accept notes and photographs for my printer during attended events. Sending stays closed pending guest-route acceptance.
 
 A separate authenticated online inbox can hold a deliberately shared phone photo while the Mac is unavailable. After the Mac wakes or the owner logs in, the desk collects it into a persistent local queue. Connection failures before sending printer commands wait and retry. Possible partial output pauses the printer for a paper check and never replays automatically. Images leave online storage after a final acknowledgement. The printer remains on the local network.
 
 The latest private audit checks pass 33 desk tests and nine combined JavaScript/inbox tests, plus JavaScript syntax checks. Real iPhone Photos sharing reached paper, including a queued photo printing when the Mac returned home. Native phone camera capture, upload and one deliberate physical print were verified November 4. Owner access was required: visitor mode correctly allowed preview only. Credential rotation was completed and verified without changing the owner-only audience. These private checks were rerun during the November 4 active-code audit.
 
-The desk, private inbox configuration and personal data are outside this public checkout; these status notes do not make the website installable from this repository. Public release, physical power-off/login behaviour and controlled sleep/arrival timing remain unverified.
+The desk, private inbox configuration and personal data are outside this public checkout; these status notes do not make the website installable from this repository. Guest-route acceptance, physical power-off/login behaviour and controlled sleep/arrival timing remain unverified.
 
 ## Checks
 
