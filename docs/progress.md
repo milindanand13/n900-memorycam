@@ -145,3 +145,5 @@ Built a dedicated guest-site package outside this public checkout. Twelve isolat
 ## November 4: consolidated next work
 
 Consolidated the guest-site and active-code work into one plan. A focused guest release review found no new blocker; all twelve isolated guest checks, build and artifact validation pass. A separate local ZIP preflight tool now inventories export metadata without extraction or account access. Synthetic checks cover multipart counts, byte totals, unsafe paths, symlinks, encrypted records and malformed archives, and verify that member payloads are never opened. No whole-library export or import has started. Archive caching must be adapted before expanding active matching. Guest paper acceptance and controlled sleep/arrival remain owner-present checks.
+
+The guest build was subsequently deployed for owner review with sending closed. Public audience activation remains pending explicit approval; deployment does not establish guest-route physical acceptance.

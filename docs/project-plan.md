@@ -14,7 +14,7 @@ A separate guest-site package now contains the landing page, note/photo composer
 
 Events are closed by default and use expiring QR invitations, a hard fifty-reservation event budget and safe same-ID retries. The browser retains an uncertain preview for retry within the tab. A saved response confirms inbox receipt, not a physical print.
 
-Twelve isolated checks pass, including concurrent event-budget enforcement, invalid inputs, expiry, private boundaries and retry handling. The built Worker validates. Taste Skill was expressly authorized for the task; responsive inspection at phone, tablet and desktop widths reports zero failures, with documented visual limitations. Synthetic example-note previews are clearly labelled and are not evidence of received guest messages or physical prints.
+Twelve isolated checks pass, including concurrent event-budget enforcement, invalid inputs, expiry, private boundaries and retry handling. The built Worker validates. The guest build is deployed for owner review with sending closed; public access is pending explicit approval. Taste Skill was expressly authorized for the task; responsive inspection at phone, tablet and desktop widths reports zero failures, with documented visual limitations. Synthetic example-note previews are clearly labelled and are not evidence of received guest messages or physical prints.
 
 ## Acceptance before the presentation
 
