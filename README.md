@@ -22,7 +22,7 @@ Built for *Small Linux Devices, Large Language Models* (Parsons, Fall 2026).
 | Arrival checks every two minutes | ✅ 120-second launchd job installed; a new receipt on Oct 25 records 20 newly copied photos. A deliberate Wi-Fi reconnect test remains pending |
 | Photos stored in Pictures by week/date | ✅ 132 originals migrated and independently verified; subsequent scheduled lookup found all 98 phone photos there without duplicates. A genuinely new photo copied automatically into Pictures on Oct 27; later checks found it already present |
 | Separate manual photo-printing desk | ✅ Owner iPhone Photos Share Sheet and native camera-to-paper verified November 4. Local draft and private inbox remain outside this checkout |
-| Presence and daily timing | 🟡 Arrival-triggered current-day pair enabled; N900 SSH reachability is the presence proxy. Independent person detection and controlled sleep/arrival timing remain unverified |
+| Presence and daily timing | 🟡 Arrival-triggered current-day pair enabled; N900 SSH reachability is the presence proxy. An iPhone home-network gate is now implemented locally; independent person identification and controlled sleep/arrival timing remain unverified |
 
 See [docs/progress.md](docs/progress.md) for the verified log.
 
@@ -45,7 +45,7 @@ The desk keeps owner archives private on the server. Visitors receive no persona
 
 A separate authenticated online inbox can hold a deliberately shared phone photo while the Mac is unavailable. After the Mac wakes or the owner logs in, the desk collects it into a persistent local queue. Connection failures before sending printer commands wait and retry. Possible partial output pauses the printer for a paper check and never replays automatically. Images leave online storage after a final acknowledgement. The printer remains on the local network.
 
-The latest recorded private checks are 30 desk tests and seven inbox tests, plus JavaScript request-flow and syntax checks. Real iPhone Photos sharing reached paper, including a queued photo printing when the Mac returned home. Native phone camera capture, upload and one deliberate physical print were verified November 4. Owner access was required: visitor mode correctly allowed preview only. Credential rotation was completed and verified without changing the owner-only audience. These private checks were not rerun for this documentation update.
+The latest private audit checks pass 33 desk tests and nine combined JavaScript/inbox tests, plus JavaScript syntax checks. Real iPhone Photos sharing reached paper, including a queued photo printing when the Mac returned home. Native phone camera capture, upload and one deliberate physical print were verified November 4. Owner access was required: visitor mode correctly allowed preview only. Credential rotation was completed and verified without changing the owner-only audience. These private checks were rerun during the November 4 active-code audit.
 
 The desk, private inbox configuration and personal data are outside this public checkout; these status notes do not make the website installable from this repository. Public release, physical power-off/login behaviour and controlled sleep/arrival timing remain unverified.
 
