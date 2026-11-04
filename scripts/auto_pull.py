@@ -20,6 +20,7 @@ import fcntl
 from datetime import datetime, timezone
 from pathlib import Path
 import socket
+import subprocess
 import sys
 import time
 
@@ -43,13 +44,23 @@ def phone_is_home(host, port=22, timeout=5, attempts=3, pause=10,
     return False
 
 
+def mac_gateway():
+    """The Mac's default gateway, so "phone not home" logs show whether the Mac itself was home."""
+    try:
+        out = subprocess.run(["route", "-n", "get", "default"], capture_output=True, text=True, timeout=5).stdout
+    except (OSError, subprocess.SubprocessError):
+        return "unknown"
+    return next((line.split(":", 1)[1].strip() for line in out.splitlines() if "gateway:" in line), "none")
+
+
 def log_line(log, text):
     stamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     with log.open("a") as stream:
         stream.write("{} {}\n".format(stamp, text))
 
 
-def run(host, key, private=transfer.PRIVATE, is_home=phone_is_home, pull=transfer.main):
+def run(host, key, private=transfer.PRIVATE, is_home=phone_is_home, pull=transfer.main,
+        gateway=mac_gateway):
     private.mkdir(parents=True, exist_ok=True)
     log = private / "auto-pull.log"
     with (private / "auto-pull.lock").open("w") as lock:
@@ -59,7 +70,7 @@ def run(host, key, private=transfer.PRIVATE, is_home=phone_is_home, pull=transfe
             log_line(log, "skipped: another run is active")
             return 2
         if not is_home(host):
-            log_line(log, "phone not home")
+            log_line(log, "phone not home (mac gateway {})".format(gateway()))
             return 0
         try:
             code = pull(["--host", host, "--key", str(key)])

@@ -28,7 +28,8 @@ class AutoPullChecks(unittest.TestCase):
 
     def run_pull(self, home=True, **kwargs):
         return auto_pull.run('phone.local', Path('/key'), private=self.private,
-                             is_home=lambda host: home, pull=self.pull(**kwargs))
+                             is_home=lambda host: home, pull=self.pull(**kwargs),
+                             gateway=lambda: '10.0.0.1')
 
     def last_log(self):
         return (self.private / 'auto-pull.log').read_text().splitlines()[-1]
@@ -36,7 +37,7 @@ class AutoPullChecks(unittest.TestCase):
     def test_phone_not_home_is_logged_and_not_an_error(self):
         self.assertEqual(self.run_pull(home=False), 0)
         self.assertEqual(self.calls, [])
-        self.assertTrue(self.last_log().endswith('phone not home'))
+        self.assertTrue(self.last_log().endswith('phone not home (mac gateway 10.0.0.1)'))
 
     def test_phone_home_runs_the_checked_transfer_with_the_key(self):
         self.assertEqual(self.run_pull(), 0)
