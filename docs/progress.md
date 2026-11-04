@@ -133,3 +133,17 @@ Still unverified: daily query selection, unattended transfer, a general matching
 - Added a second device-presence gate at the owner's request: the iPhone must respond on home Wi-Fi and match its saved network identity before daily preparation and reservation. Locked-phone response with Mirroring closed was observed. A controlled Wi-Fi off/on check returned absent then present, with no additional print. A sleeping or readdressed phone may defer printing. This is not person identification.
 - Verified all 205 active archive files and 1,444 distinct previously imported images; no missing or changed records. Only 205 imports participate in the active curated archive. Eventual goal is the entire Google Photos collection via a private export/import path; no whole-library export or expansion was performed.
 - Mirroring's black camera preview is a documented Apple limitation. Coordinate taps still fail in the automation layer after rebinding and authentication; internal cause unresolved. No account/security reset was performed. Implementation, private identities and audit evidence remain local.
+
+
+## November 4: three-part scope and guest website build
+
+Milind defined three parts: daily N900/archive journaling pair (core thesis), private owner print desk, and a polished public QR guest note/library/camera website for class presentations and parties. Chose a separate guest surface with the existing private inbox and serialized queue. This supersedes earlier uncertainty about whether guests may send to the owner's printer.
+
+Built a dedicated guest-site package outside this public checkout. Twelve isolated tests pass; Worker build and artifact validation pass; final three-width Taste inspection has zero failures and three documented warnings. Task-specific Taste authorization and saved Chrome design references are recorded in the guest package. Native guest phone capture, live guest-to-paper delivery, QR scans and destination-network rehearsal remain unverified. No live print, private owner service change or public implementation upload in this docs update. See [the project plan](project-plan.md).
+
+
+## November 4: consolidated next work
+
+Consolidated the guest-site and active-code work into one plan. A focused guest release review found no new blocker; all twelve isolated guest checks, build and artifact validation pass. A separate local ZIP preflight tool now inventories export metadata without extraction or account access. Synthetic checks cover multipart counts, byte totals, unsafe paths, symlinks, encrypted records and malformed archives, and verify that member payloads are never opened. No whole-library export or import has started. Archive caching must be adapted before expanding active matching. Guest paper acceptance and controlled sleep/arrival remain owner-present checks.
+
+The guest build was subsequently deployed for owner review with sending closed. Public audience activation remains pending explicit approval; deployment does not establish guest-route physical acceptance.
