@@ -1,7 +1,10 @@
 """Offline checks for the ranking in scripts/match_archive.py. Needs NumPy only; no model or photos."""
 from pathlib import Path
 import sys
+import tempfile
 import unittest
+
+import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / 'scripts'))
 import match_archive as match  # noqa: E402
@@ -44,6 +47,45 @@ class ArchiveChecks(unittest.TestCase):
         self.assertTrue(match.inside_private(match.PRIVATE / 'matches' / 'run'))
         self.assertFalse(match.inside_private(match.REPO_ROOT / 'docs'))
         self.assertFalse(match.inside_private(match.PRIVATE / '..' / 'results'))
+
+
+class FeatureCacheChecks(unittest.TestCase):
+    def setUp(self):
+        self._dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self._dir.cleanup)
+        self.cache = Path(self._dir.name)
+        self.calls = []
+        self.items = [(Path('a.jpg'), 'sum-a'), (Path('b.jpg'), 'sum-b')]
+
+    def embed(self, paths):
+        self.calls.append([p.name for p in paths])
+        return [np.array([1.0, float(len(p.name))]) for p in paths]
+
+    def run_cache(self, items=None, revision='r1'):
+        return match.cached_features(items or self.items, self.cache, revision, self.embed)
+
+    def test_second_run_reuses_cache(self):
+        first = self.run_cache()
+        second = self.run_cache()
+        self.assertEqual(self.calls, [['a.jpg', 'b.jpg']])
+        np.testing.assert_array_equal(first, second)
+
+    def test_changed_bytes_or_revision_recompute(self):
+        self.run_cache()
+        self.run_cache([(Path('a.jpg'), 'sum-a2'), self.items[1]])
+        self.assertEqual(self.calls[1:], [['a.jpg']])
+        self.run_cache(revision='r2')
+        self.assertEqual(self.calls[2:], [['a.jpg', 'b.jpg']])
+
+    def test_corrupt_or_wrong_shape_is_a_miss_and_rewritten(self):
+        self.run_cache()
+        (self.cache / 'sum-a-r1.npy').write_bytes(b'not an npy file')
+        np.save(self.cache / 'sum-b-r1.npy', np.zeros((2, 2)))
+        self.run_cache()
+        self.assertEqual(self.calls[1:], [['a.jpg', 'b.jpg']])
+        self.run_cache()
+        self.assertEqual(len(self.calls), 2)
+        self.assertEqual(list(self.cache.glob('*.tmp')), [])
 
 
 class ReviewChecks(unittest.TestCase):

@@ -27,7 +27,7 @@ The guest site is a separate surface under the Memorycam identity. It reuses the
 | Copy all new photos with checksum checks | ✅ Working when started by hand (`scripts/transfer_photos.py`): 131/131 files verified on the real phone on Oct 9, before the script moved into this repository; not rerun on the phone since the move |
 | Test archive (29 older N900 photos, kept private) | ✅ Imported and checksum-verified |
 | Local visual matching | ✅ Prototype (`scripts/match_archive.py`): five initial queries against 603 portfolio photos, then twelve supplied queries against a 905-image personal sample. I accepted the reviewed samples; later curated comparisons await review. Full library not indexed |
-| Daily photo selection | ✅ Connected to the local arrival workflow. Human review covers 29 examples; selection quality remains a prototype limitation. Implementation is unpublished |
+| Daily photo selection | ✅ Connected to the local arrival workflow. Human review covers 29 examples; selection quality remains a prototype limitation. Code: `scripts/daily_choice.py` |
 | Printable photo pair | ✅ Two separate photo-only slips physically confirmed November 2 and again November 4. Tuned raster settings retained |
 | Thermal printing | ✅ Volcora 80 mm (V-WLPR5), serialized local queue with cooldown and raw partial cut. Possible partial sends pause for a paper check |
 | Passwordless pull when the phone is on the same Wi-Fi | ✅ New photos copied through launchd on Oct 22; unattended overnight run on Oct 23 completed with no new photos |
@@ -133,7 +133,7 @@ ssh-keygen -t rsa -b 3072 -N "" -f ~/.ssh/n900_memorycam
 ssh -o HostKeyAlgorithms=+ssh-rsa root@PHONE 'mkdir -p /root/.ssh && cat >> /root/.ssh/authorized_keys && chmod 700 /root/.ssh && chmod 600 /root/.ssh/authorized_keys' < ~/.ssh/n900_memorycam.pub
 ```
 
-Then run `python3 scripts/auto_pull.py --host PHONE --key ~/.ssh/n900_memorycam`. The phone's old SSH server needs an RSA key; the key has no passphrase, so keep it private and on this Mac only. A line per run goes to `private/auto-pull.log`.
+Then run `python3 scripts/auto_pull.py --host PHONE --key ~/.ssh/n900_memorycam`. The phone's old SSH server needs an RSA key; the key has no passphrase, so keep it private and on this Mac only. A line per run goes to `private/auto-pull.log`. Add `--mac PHONE_WIFI_MAC` to find the phone by its Wi-Fi hardware address on whatever network the Mac is on (home, a phone hotspot, a friend's Wi-Fi); the SSH key is still checked under `PHONE`. `scripts/lan_find.py MAC PORT` does that lookup on its own (it only sweeps networks of 1024 addresses or fewer).
 
 #### Upgrade an existing nightly Mac job to arrival checks
 
@@ -164,9 +164,13 @@ python3 scripts/match_archive.py --download-model \
 
 The archive folder is searched recursively and read in place; photos are never moved, changed or uploaded. Results go to a new folder under `private/matches/`: `result.json` holds the full ranking, and `review.html` shows the query, the six closest matches and one random pick for comparison. Image features are cached in `private/features/`, so later runs against the same archive only process new photos. If your photos already live outside the repository, you can make `private` a symlink to that folder.
 
-### Daily selection experiments
+### Choose the day's photo
 
-Daily selection and its later darkness/date corrections exist in unpublished local work. Initial picks were rejected, and the close-up problem remains open. This public checkout does not include that script yet. The separate manual printing desk also remains outside this checkout.
+```bash
+python3 scripts/daily_choice.py --date 2026-10-24
+```
+
+A dry run: it prints the chosen photo and every photo it considered, and saves nothing. The rule: take the photos whose camera filename has that date; drop any that are near-black, too blurry or a near copy of a later shot that day; then pick the one CLIP scores as most scene-like (a place, an activity, people in context, not a mirror selfie or object close-up). CLIP sees dark photos lifted to a readable brightness, and a dark photo loses a little score so a lit one wins when the two are close. If every photo fails those checks, the best one is still used. On a day with no photo, the stand-in is the best usable older photo in the library that has never been chosen. Exit status 2 means the library has nothing left. It uses the CLIP model and feature cache from `match_archive.py`, plus the CLIP tokenizer files in `private/models/clip-tokenizer/` (a local copy of the same BPE vocabulary; the model download does not include them). Add `--record` only when the choice is really used: it appends to ignored `private/daily-choice.json`, so the same photo is never chosen twice and a repeated run on the same date returns the same photo. The stand-in pool excludes photos with unverified dates, except filename dates listed in `CLOCK_FIXES` (a few wrong-clock dates from the N900's September clock reset that were checked against other photos).
 
 ## Known behaviour
 
@@ -176,7 +180,7 @@ Daily selection and its later darkness/date corrections exist in unpublished loc
 - `scripts/n900-fetch-photo.sh` uses macOS's `md5` command, so live transfer runs on macOS only. `scripts/transfer_photos.py` computes checksums in Python instead.
 - Matching only removes exact byte-for-byte duplicates. Near-identical frames (two shots of the same scene) can both rank near the top, and different queries can return the same archive photo.
 - A high match score means the images look alike to CLIP. It is not a probability, and it says nothing about whether the pair means anything to me.
-- Local daily-selection experiments have unresolved quality issues and have not been run as the unattended nightly ritual.
+- `scripts/daily_choice.py` chooses the day's photo (see below). Its blur, brightness and near-copy limits and its CLIP "scene-like" score are untuned first guesses, and no one has judged whether its picks are good.
 
 ## Privacy
 
@@ -196,3 +200,7 @@ This project is co-authored with AI models, as the course requires. See [ATTRIBU
 ## License
 
 [MIT](LICENSE). I chose it because this is a learning project: anyone should be able to reuse the N900 scripts, and the course's own materials use MIT too.
+
+## Print last photo from the N900
+
+`n900/print-via-mac/` holds a phone launcher. A tap marks the newest photo; the separate Mac print desk checks every two minutes, prints it once and clears the mark. Install the script as `/home/user/memorycam-print.sh` and the `.desktop` file in `/usr/share/applications/hildon/`, then add it to the desktop from the N900 desktop menu (Add shortcut).

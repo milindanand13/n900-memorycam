@@ -1,0 +1,8 @@
+[Desktop Entry]
+Encoding=UTF-8
+Version=1.0
+Type=Application
+Name=Print last photo
+Exec=/home/user/memorycam-print.sh
+Icon=general_image
+X-Osso-Type=application/x-executable

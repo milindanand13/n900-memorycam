@@ -16,6 +16,7 @@ from datetime import datetime, timezone
 import hashlib
 import html
 import json
+import os
 from pathlib import Path
 import random
 import time
@@ -101,6 +102,29 @@ def review_page(candidate_count, cards):
     )
 
 
+def cached_features(items, cache, revision, embed):
+    """Vectors for (path, checksum) items. A feature is reused when its checksum and model revision match;
+    a missing, unreadable or wrongly shaped cache file is recomputed with embed(paths) and rewritten atomically."""
+    vectors, missing = {}, []
+    for number, (path, checksum) in enumerate(items):
+        feature_path = cache / '{}-{}.npy'.format(checksum, revision)
+        try:
+            vector = np.load(feature_path, allow_pickle=False)
+            if vector.ndim != 1 or vector.size == 0 or not np.isfinite(vector).all():
+                raise ValueError('bad feature shape')
+            vectors[number] = vector
+        except (OSError, ValueError, EOFError):
+            missing.append(number)
+    for number, vector in zip(missing, embed([items[n][0] for n in missing]) if missing else []):
+        feature_path = cache / '{}-{}.npy'.format(items[number][1], revision)
+        temporary = feature_path.with_name(feature_path.name + '.tmp')
+        with temporary.open('wb') as stream:
+            np.save(stream, vector, allow_pickle=False)
+        os.replace(temporary, feature_path)
+        vectors[number] = vector
+    return [vectors[n] for n in range(len(items))]
+
+
 def write_review(output, query, source, ranked, baseline):
     from PIL import Image
     assets = output / 'review-images'
@@ -167,26 +191,24 @@ def main():
     revision = (MODEL_CACHE / 'models--openai--clip-vit-base-patch32' / 'refs' / 'main').read_text().strip()
 
     start = time.monotonic()
-    vectors = []
     items = [(query, query_hash)] + [(source / r['relative_path'], r['sha256']) for r in records]
-    for number, (path, checksum) in enumerate(items, 1):
-        feature_path = cache / '{}-{}.npy'.format(checksum, revision)
-        if feature_path.exists():
-            vector = np.load(feature_path, allow_pickle=False)
-        else:
+
+    def embed(paths):
+        vectors = []
+        for number, path in enumerate(paths, 1):
             image = load_rgb(path)
             try:
                 pixels = processor(images=image, return_tensors='pt')['pixel_values'].to(device)
                 with torch.inference_mode():
-                    vector = model.get_image_features(pixel_values=pixels)[0].cpu().numpy()
+                    vectors.append(model.get_image_features(pixel_values=pixels)[0].cpu().numpy())
             finally:
                 image.close()
-            np.save(feature_path, vector, allow_pickle=False)
-        vectors.append(vector)
-        if number == 1 or number % 25 == 0 or number == len(items):
-            print(json.dumps({'processed': number, 'total': len(items),
-                              'elapsed_seconds': round(time.monotonic() - start, 1), 'device': device}), flush=True)
+            if number == 1 or number % 25 == 0 or number == len(paths):
+                print(json.dumps({'embedded': number, 'to_embed': len(paths),
+                                  'elapsed_seconds': round(time.monotonic() - start, 1), 'device': device}), flush=True)
+        return vectors
 
+    vectors = cached_features(items, cache, revision, embed)
     ranked = ranking(vectors[0], vectors[1:], records, query_hash)
     if not ranked:
         raise SystemExit('No archive photos left after excluding copies of the query.')
