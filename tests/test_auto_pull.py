@@ -44,6 +44,20 @@ class AutoPullChecks(unittest.TestCase):
         self.assertEqual(self.calls, [['--host', 'phone.local', '--key', '/key']])
         self.assertTrue(self.last_log().endswith('transfer ok'))
 
+    def test_phone_found_by_mac_uses_its_ip_and_checks_key_under_hostname(self):
+        seen = []
+        code = auto_pull.run('phone.local', Path('/key'), private=self.private,
+                             is_home=lambda host: seen.append(host) or True, pull=self.pull(),
+                             gateway=lambda: '10.0.0.1', mac='aa:bb', find=lambda mac, port: '172.20.10.6')
+        self.assertEqual(code, 0)
+        self.assertEqual(seen, ['172.20.10.6'])
+        self.assertEqual(self.calls, [['--host', '172.20.10.6', '--key', '/key', '--host-key-alias', 'phone.local']])
+
+    def test_mac_lookup_failure_falls_back_to_hostname(self):
+        auto_pull.run('phone.local', Path('/key'), private=self.private, is_home=lambda host: True,
+                      pull=self.pull(), gateway=lambda: '10.0.0.1', mac='aa:bb', find=lambda mac, port: None)
+        self.assertEqual(self.calls, [['--host', 'phone.local', '--key', '/key']])
+
     def test_failed_transfer_is_reported(self):
         self.assertEqual(self.run_pull(code=1), 1)
         self.assertTrue(self.last_log().endswith('transfer failed (exit 1)'))

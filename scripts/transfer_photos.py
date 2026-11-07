@@ -253,6 +253,7 @@ def inside_private(path):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--host", required=True, help="Current N900 IP address")
+    parser.add_argument("--host-key-alias", help="Check the phone's SSH key under this known name, so a new IP on another Wi-Fi is still verified")
     parser.add_argument("--socket", type=Path, default=PRIVATE / "ssh-session" / "control")
     parser.add_argument("--source-root", default=REMOTE_ROOT, help="Photo folder on the N900")
     parser.add_argument("--inbox", type=Path, help="Override under private/; otherwise use the configured photo library")
@@ -291,6 +292,8 @@ def main(argv=None):
         "-o", "StrictHostKeyChecking=yes", "-o", "ServerAliveInterval=15",
         "-o", "ServerAliveCountMax=3", "root@" + args.host,
     ]
+    if args.host_key_alias:
+        ssh[1:1] = ["-o", "HostKeyAlias=" + args.host_key_alias]
     if not args.key:
         session_check = subprocess.run(
             ["ssh", "-S", str(args.socket), "-O", "check", "root@" + args.host],

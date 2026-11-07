@@ -119,7 +119,7 @@ ssh-keygen -t rsa -b 3072 -N "" -f ~/.ssh/n900_memorycam
 ssh -o HostKeyAlgorithms=+ssh-rsa root@PHONE 'mkdir -p /root/.ssh && cat >> /root/.ssh/authorized_keys && chmod 700 /root/.ssh && chmod 600 /root/.ssh/authorized_keys' < ~/.ssh/n900_memorycam.pub
 ```
 
-Then run `python3 scripts/auto_pull.py --host PHONE --key ~/.ssh/n900_memorycam`. The phone's old SSH server needs an RSA key; the key has no passphrase, so keep it private and on this Mac only. A line per run goes to `private/auto-pull.log`.
+Then run `python3 scripts/auto_pull.py --host PHONE --key ~/.ssh/n900_memorycam`. The phone's old SSH server needs an RSA key; the key has no passphrase, so keep it private and on this Mac only. A line per run goes to `private/auto-pull.log`. Add `--mac PHONE_WIFI_MAC` to find the phone by its Wi-Fi hardware address on whatever network the Mac is on (home, a phone hotspot, a friend's Wi-Fi); the SSH key is still checked under `PHONE`. `scripts/lan_find.py MAC PORT` does that lookup on its own (it only sweeps networks of 1024 addresses or fewer).
 
 #### Upgrade an existing nightly Mac job to arrival checks
 
@@ -186,3 +186,7 @@ This project is co-authored with AI models, as the course requires. See [ATTRIBU
 ## License
 
 [MIT](LICENSE). I chose it because this is a learning project: anyone should be able to reuse the N900 scripts, and the course's own materials use MIT too.
+
+## Print last photo from the N900
+
+`n900/print-via-mac/` holds a phone launcher. A tap marks the newest photo; the separate Mac print desk checks every two minutes, prints it once and clears the mark. Install the script as `/home/user/memorycam-print.sh` and the `.desktop` file in `/usr/share/applications/hildon/`, then add it to the desktop from the N900 desktop menu (Add shortcut).

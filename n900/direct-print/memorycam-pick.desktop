@@ -1,0 +1,10 @@
+[Desktop Entry]
+Encoding=UTF-8
+Version=1.0
+Type=Application
+Name=Print photo (choose)
+Exec=/usr/bin/python /home/user/memorycam/print_pick.py
+Icon=general_print
+X-Window-Icon=general_print
+X-Window-Icon-Dimmed=general_print
+X-Osso-Type=application/x-executable
