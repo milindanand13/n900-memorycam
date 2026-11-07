@@ -1,10 +1,22 @@
 # n900-memorycam
 
-A Nokia N900 becomes a deliberate daily camera for a reflective journal. At a set time each night, when I am home and the N900 is home, the system picks one photo from my day and searches my personal photo archive for an older image connected to it. A thermal printer then prints the new photo and the old one as two separate slips. There is no generated caption or journal question: the two images are the prompt. The AI chooses which past moment to bring back; I decide what the connection means.
+A Nokia N900 becomes a deliberate daily camera for a reflective journal. When the N900 becomes reachable on the home network, while the Mac is awake and logged in, the system picks one photo from my day and searches my personal photo archive for an older image connected to it. A thermal printer then prints the new photo and the old one as two separate slips. There is no generated caption or journal question: the two images are the prompt. The AI chooses which past moment to bring back; I decide what the connection means.
 
 Built for *Small Linux Devices, Large Language Models* (Parsons, Fall 2026).
 
-> Photo of the device: coming once the printed pair exists.
+> Working prototype verified through physical prints; device documentation photograph still pending.
+
+## Three parts of Memorycam
+
+The daily journaling ritual is the core thesis. The private owner desk and the guest website extend the same printer:
+
+| Part | What it does | State |
+| --- | --- | --- |
+| Daily ritual | On arriving home with the N900, one daily image and one archive partner print as separate journaling prompts | Working and physically demonstrated. Controlled sleep/arrival and Wi-Fi reliability remain open |
+| Private owner desk | Print a shared phone photo, an uploaded archive photo, or a photograph captured through the website | Owner phone sharing and native camera-to-paper physically verified November 4 |
+| Public guest site | At a class presentation or party, scan a QR, write a note or choose/take a photo, preview it and send it to my printer | Dedicated landing/composer and event relay built November 4. Printing stays closed pending real guest-route acceptance |
+
+The guest site is a separate surface under the Memorycam identity. It reuses the private inbox and existing queue without exposing my archive or owner setup. See [the project plan](docs/project-plan.md) for acceptance and presentation preparation.
 
 ## Status
 
@@ -15,37 +27,39 @@ Built for *Small Linux Devices, Large Language Models* (Parsons, Fall 2026).
 | Copy all new photos with checksum checks | ✅ Working when started by hand (`scripts/transfer_photos.py`): 131/131 files verified on the real phone on Oct 9, before the script moved into this repository; not rerun on the phone since the move |
 | Test archive (29 older N900 photos, kept private) | ✅ Imported and checksum-verified |
 | Local visual matching | ✅ Prototype (`scripts/match_archive.py`): five initial queries against 603 portfolio photos, then twelve supplied queries against a 905-image personal sample. I accepted the reviewed samples; later curated comparisons await review. Full library not indexed |
-| Daily photo selection | 🟡 Written and tested offline (`scripts/daily_choice.py`). Initial picks were rejected; darkness handling and checked clock corrections were revised. The close-up problem and unattended nightly run remain open |
-| Printable photo pair | 🟡 Photo slips print and the look is tuned by eye on real prints (Nov 1): Floyd-Steinberg dither, printer darkness 8 of 8, gamma 0.8, contrast 1.2, sharpen 50, 576 dots wide. Two-slip layout and automation not done |
-| Thermal printing | 🟡 Volcora 80 mm (V-WLPR5) on Wi-Fi; text and photo slips printed Nov 1. Needs the raw cut command, and jobs must not be sent back to back (the printer then prints garbage) |
+| Daily photo selection | ✅ Connected to the local arrival workflow. Human review covers 29 examples; selection quality remains a prototype limitation. Code: `scripts/daily_choice.py` |
+| Printable photo pair | ✅ Two separate photo-only slips physically confirmed November 2 and again November 4. Tuned raster settings retained |
+| Thermal printing | ✅ Volcora 80 mm (V-WLPR5), serialized local queue with cooldown and raw partial cut. Possible partial sends pause for a paper check |
 | Passwordless pull when the phone is on the same Wi-Fi | ✅ New photos copied through launchd on Oct 22; unattended overnight run on Oct 23 completed with no new photos |
 | Arrival checks every two minutes | ✅ 120-second launchd job installed; a new receipt on Oct 25 records 20 newly copied photos. A deliberate Wi-Fi reconnect test remains pending |
 | Photos stored in Pictures by week/date | ✅ 132 originals migrated and independently verified; subsequent scheduled lookup found all 98 phone photos there without duplicates. A genuinely new photo copied automatically into Pictures on Oct 27; later checks found it already present |
-| Separate manual photo-printing desk | 🟡 Local dark-mode draft built separately; direct owner random printing, upload/caption/date, private durable phone inbox and login startup. Software and synthetic hosted delivery checked; installed iPhone Share Sheet and paper verification remain pending |
-| Separate person-presence check and print schedule | ⏳ Not started |
+| Separate manual photo-printing desk | ✅ Owner iPhone Photos Share Sheet and native camera-to-paper verified November 4. Local draft and private inbox remain outside this checkout |
+| Presence and daily timing | 🟡 Arrival-triggered current-day pair enabled; N900 SSH reachability is the presence proxy. The local routine also requires the iPhone to respond with its saved network identity; Wi-Fi absence/return was verified November 4. Independent person identification and controlled sleep/arrival timing remain unverified |
 
 See [docs/progress.md](docs/progress.md) for the verified log.
 
-## How it works (planned)
+## How the local prototype works
 
 ```
-N900 camera ──SSH──▶ Mac: match against archive ──▶ two photo slips ──▶ thermal printer (evening)
+N900 camera ──SSH──▶ Mac: match against archive ──▶ two photo slips ──▶ thermal printer (on arrival)
                           (local image features)
 ```
 
-The N900 is the camera and SSH server; the Mac pulls photos from it and runs matching. With 256 MB of RAM, the N900 cannot run the selected model. Matching uses CLIP image features only, so captions, filenames and dates do not affect which photo comes back. The initial five-query experiment used 603 portfolio photos. A later twelve-query comparison used 905 personal stills; I accepted the reviewed sample pairings. Six separate local A/B preferences favoured CLIP over random, but do not establish a Google Photos preference rate. The latest manually curated archive has 205 images; adding 40 eligible images left all twelve leading results unchanged. New pairings await my review. None of these convenience samples establishes full-library reliability or memory value. Matching still requires an explicitly supplied query.
+The N900 is the camera and SSH server; the Mac pulls photos from it and runs matching. With 256 MB of RAM, the N900 cannot run the selected model. Matching uses CLIP image features only, so captions, filenames and dates do not affect which photo comes back. The initial five-query experiment used 603 portfolio photos. A later twelve-query comparison used 905 personal stills; I accepted the reviewed sample pairings. Six separate local A/B preferences favoured CLIP over random, but do not establish a Google Photos preference rate. The latest manually curated archive has 205 images; adding 40 eligible images left all twelve leading results unchanged. New pairings await my review. None of these convenience samples establishes full-library reliability or memory value. The local arrival workflow supplies the selected daily query; this public checkout still exposes the standalone matching tools.
 
-The next hardware milestone is a verified two-slip nightly run on the Volcora 80 mm printer. Manual text and tuned photo slips printed on November 1. A two-minute and nightly transfer job is installed. A new scheduled photo import into Pictures was verified October 27; exact arrival latency remains untested. Daily selection, print scheduling, and separate checks that Milind and the N900 are home remain unfinished.
+The local daily routine checks every two minutes while the Mac is awake and logged in. It imports new photos, selects a current-day image (or an unused older N900 stand-in), retrieves an archive partner and queues two separate photo-only slips. The first pair was physically confirmed November 2. It reserves one pair per New York calendar date and does not print an old-day backlog. On November 4, a missing pair was traced to the N900 being off Wi-Fi; reconnecting it allowed the pair to print. The reason for that Wi-Fi dropout remains unknown. Controlled sleep/wake timing and independent person detection remain open. This integration is local unpublished work.
 
 ## Manual printing desk
 
 A separate private printing desk supports immediate random prints from eligible Nokia or personal-archive photos, plus user uploads with an optional caption and capture date. Its receipt preview sits above a printer illustration in a dark workspace. The no-generated-caption rule for the nightly photo-pair ritual is unchanged; manual captions are entered by the person printing.
 
-The desk keeps owner archives private on the server. Visitors receive no personal catalogue, thumbnails, random image or queue details. Public visitor printing is not enabled. The eventual public version still needs a decision about whether visitors use their own printer or may submit to the owner's printer.
+The desk keeps owner archives private on the server. Visitors receive no personal catalogue, thumbnails, random image or queue details. A separate guest site is intended to accept notes and photographs for my printer during attended events. Sending stays closed pending guest-route acceptance.
 
 A separate authenticated online inbox can hold a deliberately shared phone photo while the Mac is unavailable. After the Mac wakes or the owner logs in, the desk collects it into a persistent local queue. Connection failures before sending printer commands wait and retry. Possible partial output pauses the printer for a paper check and never replays automatically. Images leave online storage after a final acknowledgement. The printer remains on the local network.
 
-The private desk has 22 local checks and six inbox checks. Live hosted delivery was verified with one synthetic image and an isolated preview-only consumer. This does not establish installed iPhone execution, a physical Mac power-off test or the appearance of a paper slip. The desk, private inbox configuration and personal data are outside this public checkout; these status notes do not make the website installable from this repository.
+The latest private audit checks pass 33 desk tests and nine combined JavaScript/inbox tests, plus JavaScript syntax checks. Real iPhone Photos sharing reached paper, including a queued photo printing when the Mac returned home. Native phone camera capture, upload and one deliberate physical print were verified November 4. Owner access was required: visitor mode correctly allowed preview only. Credential rotation was completed and verified without changing the owner-only audience. These private checks were rerun during the November 4 active-code audit.
+
+The desk, private inbox configuration and personal data are outside this public checkout; these status notes do not make the website installable from this repository. Guest-route acceptance, physical power-off/login behaviour and controlled sleep/arrival timing remain unverified.
 
 ## Checks
 
