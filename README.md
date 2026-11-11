@@ -114,7 +114,7 @@ python3 scripts/transfer_photos.py --host PHONE_IP
 ssh -S private/ssh-session/control -O exit root@PHONE_IP
 ```
 
-Each photo is checked against the phone's MD5 and its JPEG/PNG header before it gets its final name. If a filename is already taken by a different photo, the new one is saved with its checksum added to the name; nothing is overwritten and nothing is deleted from the phone. A run that copies something, or fails, writes a receipt to `private/transfers/`; a check that finds nothing new writes none. A phone file with an unusual name (spaces, odd characters, not a photo) is skipped and listed in the receipt and output, so it cannot block the other photos. To keep the two-minute check light, the phone is asked only for names and sizes, and for checksums of photos it has not seen before; checksums are remembered in ignored `private/md5-cache.json` (delete it to force a full recheck). Use `--source-root` for another photo folder on the phone (for example `/home/user/MyDocs/.images`).
+Each photo is checked against the phone's MD5 and its JPEG/PNG header before it gets its final name. If a filename is already taken by a different photo, the new one is saved with its checksum added to the name; nothing is overwritten and nothing is deleted from the phone. A run that copies something, or fails, writes a receipt to `private/transfers/`; a check that finds nothing new writes none. A phone file with an unusual name (spaces, odd characters, not a photo) is skipped and listed in the receipt and output, so it cannot block the other photos. To keep the two-minute check light, the phone is asked only for names and sizes, and for checksums for new or changed listings and for camera filenames dated today or yesterday; checksums are remembered in ignored `private/md5-cache.json` (delete it to force a full recheck). Use `--source-root` for another photo folder on the phone (for example `/home/user/MyDocs/.images`).
 
 ### Keep Nokia photographs in Pictures
 
@@ -126,7 +126,7 @@ Only after the migration succeeds does it save ignored `private/photo-library.js
 
 ### Pull automatically when the phone is home
 
-`scripts/auto_pull.py` is for a scheduler to run. It asks whether the phone answers on SSH port 22; if not, it logs `phone not home` and exits quietly. If it does, it runs the same checked copy as above, using a dedicated passwordless key instead of an open connection, and only one run can happen at a time. Set the key up once:
+`scripts/auto_pull.py` is for a scheduler to run. It asks whether the phone answers on SSH port 22; if not, it logs `phone not home` and exits with status 0. Callers that require a completed import can pass `--strict` to get exit status 3 when the phone is unavailable. If the phone answers, it runs the same checked copy as above, using a dedicated passwordless key instead of an open connection, and only one run can happen at a time. Set the key up once:
 
 ```sh
 ssh-keygen -t rsa -b 3072 -N "" -f ~/.ssh/n900_memorycam

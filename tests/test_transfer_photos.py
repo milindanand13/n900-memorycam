@@ -1,6 +1,7 @@
 """Offline checks for scripts/transfer_photos.py. No phone, SSH or real photos needed."""
 from contextlib import redirect_stdout
 import hashlib
+from datetime import date, timedelta
 import io
 import json
 from pathlib import Path
@@ -234,6 +235,20 @@ class RunChecks(unittest.TestCase):
         self.assertEqual(self.run_transfer(phone), 0)
         self.assertEqual(phone.checksummed, [])
         self.assertEqual(len(self.receipts()), 2)  # nothing new, so no new receipt
+
+    def test_overnight_replacement_with_same_listing_preserves_both_versions(self):
+        day = date.today() - timedelta(days=1)
+        name = day.strftime('%Y%m%d') + '_001.jpg'
+        first, replacement = JPEG + b'a', JPEG + b'b'
+        phone = FakePhone({name: first})
+        self.assertEqual(self.run_transfer(phone), 0)
+        phone.files[name] = replacement  # FakePhone still reports the same size and timestamp.
+        self.assertEqual(self.run_transfer(phone), 0)
+        inbox = self.private / 'inbox'
+        self.assertEqual((inbox / name).read_bytes(), first)
+        replacement_name = name[:-4] + '--' + md5(replacement) + '.jpg'
+        self.assertEqual((inbox / replacement_name).read_bytes(), replacement)
+        self.assertEqual(phone.downloaded, [name, name])
 
     def test_unreadable_listing_falls_back_to_checksumming_everything(self):
         phone = FakePhone({'20261023_001.jpg': JPEG}, listing_works=False)

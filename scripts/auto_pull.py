@@ -16,7 +16,8 @@ copy as scripts/transfer_photos.py (originals stay on the phone, nothing is
 overwritten, every file is MD5-checked). Only one run can happen at a time. One line
 per run is appended to private/auto-pull.log; full receipts go to private/transfers/.
 
-Exit codes: 0 done or phone not home, 1 transfer failed, 2 another run is active.
+Exit codes: 0 done (or phone not home by default), 1 transfer failed,
+2 another run is active, 3 phone not home with --strict.
 """
 
 import argparse
@@ -65,7 +66,7 @@ def log_line(log, text):
 
 
 def run(host, key, private=transfer.PRIVATE, is_home=phone_is_home, pull=transfer.main,
-        gateway=mac_gateway, mac=None, find=lan_find.find):
+        gateway=mac_gateway, mac=None, find=lan_find.find, strict=False):
     private.mkdir(parents=True, exist_ok=True)
     log = private / "auto-pull.log"
     with (private / "auto-pull.lock").open("w") as lock:
@@ -77,7 +78,7 @@ def run(host, key, private=transfer.PRIVATE, is_home=phone_is_home, pull=transfe
         address = (find(mac, 22) if mac else None) or host
         if not is_home(address):
             log_line(log, "phone not home (mac gateway {})".format(gateway()))
-            return 0
+            return 3 if strict else 0
         extra = ["--host-key-alias", host] if address != host else []
         try:
             code = pull(["--host", address, "--key", str(key)] + extra)
@@ -95,8 +96,9 @@ def main(argv=None):
     parser.add_argument("--host", required=True, help="N900 hostname or IP address")
     parser.add_argument("--key", required=True, type=Path, help="Dedicated passwordless SSH key")
     parser.add_argument("--mac", help="Phone's Wi-Fi MAC address, to find it on any network")
+    parser.add_argument("--strict", action="store_true", help="Exit 3 when the phone is unavailable")
     args = parser.parse_args(argv)
-    return run(args.host, args.key.expanduser(), mac=args.mac)
+    return run(args.host, args.key.expanduser(), mac=args.mac, strict=args.strict)
 
 
 if __name__ == "__main__":

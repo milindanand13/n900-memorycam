@@ -155,3 +155,13 @@ The guest build was subsequently deployed, and the owner explicitly approved pub
 ## November 7: presence check, model comparison
 - The nightly pair missed Nov 6 because the home check needed the iPhone to answer a ping, and a sleeping iPhone ignores about half of them. The private desk now counts the phone as home when its Wi-Fi hardware address answers on the network. Not yet seen on a real night.
 - Compared CLIP ViT-B/32 (current), CLIP ViT-L/14 and SigLIP base on the 205-photo archive. Blind judging of 12 queries: 10, 9 and 10 rows liked. Automatic same-event test on 143 photos: top-5 hit rates 0.67, 0.69 and 0.60. No clear winner, so CLIP ViT-B/32 stays (fastest).
+
+## November 9: importer reliability
+
+- Added an opt-in strict auto-pull result so callers that require a completed import can distinguish an unavailable phone. The scheduled default still exits quietly when the phone is away.
+- Refresh phone checksums for camera filenames dated today or yesterday, including overnight captures. An offline test replaced a photo without changing its listing and verified that both versions survived. The public repository checks passed (76 tests). No live phone run or service change.
+
+## November 11: decisions
+- The usual-plus-improbable daily pair was tested offline and rejected as too random. It never ran live; the daily output stays the usual pair only.
+- The Nov 9 overnight slip was confirmed on paper.
+- Next: a real guest-site print test (Nov 12), a larger-sample model comparison, a test of whether the N900 camera changes what CLIP finds memorable, and the V2 direction (text and journaling prompts alongside photos, concept work, hosting).
