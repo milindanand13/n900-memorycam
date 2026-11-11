@@ -165,3 +165,8 @@ The guest build was subsequently deployed, and the owner explicitly approved pub
 - The usual-plus-improbable daily pair was tested offline and rejected as too random. It never ran live; the daily output stays the usual pair only.
 - The Nov 9 overnight slip was confirmed on paper.
 - Next: a real guest-site print test (Nov 12), a larger-sample model comparison, a test of whether the N900 camera changes what CLIP finds memorable, and the V2 direction (text and journaling prompts alongside photos, concept work, hosting).
+
+## November 11: larger model test
+- Repeated the same-event test on 1,444 photos (1,095 queries) for CLIP ViT-B/32, CLIP ViT-L/14 and SigLIP base. Top-five hit rates 0.28, 0.28 and 0.27 with overlapping 95% intervals; a paired bootstrap found no gap bigger than luck. CLIP ViT-B/32 stays (fastest).
+- All models scored far lower than on 205 photos (0.6 to 0.7): a bigger library has more look-alikes, so small-library numbers flatter every model. Next: judge 40 blind disagreement rows by eye.
+- The 14 N900 photos dated 2012 are real Cape Town photos from before this N900's current use, not clock errors. They stay excluded; the date and season score stays off.
