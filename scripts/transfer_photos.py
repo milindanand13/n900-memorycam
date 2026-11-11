@@ -36,7 +36,7 @@ import shlex
 import subprocess
 import sys
 import tempfile
-from datetime import datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 
 import photo_library
 
@@ -213,8 +213,8 @@ def read_phone(ssh, remote_root, remembered):
     """Return ([(path, md5)], skipped lines, what to remember) for the photos on the phone.
 
     Lists names and sizes (cheap), then asks the phone for the checksum of only the
-    photos not remembered from an earlier run. If the listing is not understood, it
-    falls back to checksumming every photo, as the first version did.
+    photos not remembered from an earlier run or in the active capture window.
+    If the listing is not understood, it falls back to checksumming every photo.
     """
     try:
         listing, skipped = parse_listing(subprocess.run(
@@ -227,9 +227,14 @@ def read_phone(ssh, remote_root, remembered):
         return parse_manifest(manifest), [], {}
     checksums = {}
     wanted = []
+    today = date.today()
+    # Include yesterday for the overnight capture window.
+    active_days = {today.isoformat(), (today - timedelta(days=1)).isoformat()}
     for path, size, stamp in listing:
         entry = remembered.get(path)
-        if entry and entry[:2] == [size, stamp]:
+        # shortcut: older or unverified dates reuse listing metadata; delete the cache for a full recheck.
+        if (entry and entry[:2] == [size, stamp]
+                and photo_library.date_folders(path, today=today).name not in active_days):
             checksums[path] = entry[2]
         else:
             wanted.append(path)

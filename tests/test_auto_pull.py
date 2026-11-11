@@ -1,9 +1,11 @@
 """Offline checks for scripts/auto_pull.py. No phone, network or SSH key needed."""
 import fcntl
+from functools import partial
 from pathlib import Path
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / 'scripts'))
 import auto_pull  # noqa: E402
@@ -26,10 +28,10 @@ class AutoPullChecks(unittest.TestCase):
             return code
         return fake
 
-    def run_pull(self, home=True, **kwargs):
+    def run_pull(self, home=True, strict=False, **kwargs):
         return auto_pull.run('phone.local', Path('/key'), private=self.private,
                              is_home=lambda host: home, pull=self.pull(**kwargs),
-                             gateway=lambda: '10.0.0.1')
+                             gateway=lambda: '10.0.0.1', strict=strict)
 
     def last_log(self):
         return (self.private / 'auto-pull.log').read_text().splitlines()[-1]
@@ -38,6 +40,14 @@ class AutoPullChecks(unittest.TestCase):
         self.assertEqual(self.run_pull(home=False), 0)
         self.assertEqual(self.calls, [])
         self.assertTrue(self.last_log().endswith('phone not home (mac gateway 10.0.0.1)'))
+
+    def test_strict_cli_distinguishes_unavailable_phone_from_completed_import(self):
+        offline = partial(auto_pull.run, private=self.private, is_home=lambda host: False,
+                          pull=self.pull(), gateway=lambda: 'none')
+        with patch.object(auto_pull, 'run', offline):
+            self.assertEqual(auto_pull.main(['--host', 'phone.local', '--key', '/key', '--strict']), 3)
+        self.assertEqual(self.calls, [])
+        self.assertEqual(self.run_pull(strict=True), 0)
 
     def test_phone_home_runs_the_checked_transfer_with_the_key(self):
         self.assertEqual(self.run_pull(), 0)
