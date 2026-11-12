@@ -107,10 +107,45 @@ def migrate(roots, library, private):
     return receipt_path, records
 
 
+def refile(library, link_roots):
+    """Move library photos to the folder their date now says, and repoint old links to them.
+
+    Same-disk renames only: photo bytes are never rewritten, and nothing is overwritten. The caller
+    holds the auto-pull lock. Returns the (old, new) path pairs that moved.
+    """
+    moved = []
+    for path in sorted(library.rglob("*")):
+        if not path.is_file() or path.is_symlink() or path.suffix.lower() not in transfer.PHOTO_EXTENSIONS:
+            continue
+        target = photo_library.photo_directory(library, path.name) / path.name
+        if target.parent == path.parent:
+            continue
+        if target.exists():
+            raise ValueError("A different photo is already at " + str(target))
+        checksum = transfer.md5_file(path)
+        os.rename(str(path), str(target))
+        if transfer.md5_file(target) != checksum:
+            raise ValueError("Photo changed while moving: " + str(target))
+        moved.append((path, target))
+    new_by_old = {str(old): new for old, new in moved}
+    for root in link_roots:
+        for link in (root.rglob("*") if root.is_dir() else ()):
+            new = new_by_old.get(os.readlink(str(link))) if link.is_symlink() else None
+            if new:
+                fd, name = tempfile.mkstemp(prefix=".photo-link-", dir=str(link.parent))
+                os.close(fd)
+                os.unlink(name)
+                os.symlink(str(new), name)
+                os.replace(name, str(link))
+    return moved
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--library", type=Path, default=photo_library.DEFAULT_LIBRARY)
     parser.add_argument("--source", type=Path, action="append", help="Additional existing Nokia photo folder")
+    parser.add_argument("--refile", action="store_true",
+                        help="Only re-file photos already in the library after photo_library.CLOCK_FIXES changed")
     args = parser.parse_args(argv)
     private = transfer.PRIVATE.resolve()
     try:
@@ -122,6 +157,11 @@ def main(argv=None):
             if root == library or library in root.parents or root in library.parents:
                 raise ValueError("Source and destination folders must be separate.")
         private.mkdir(parents=True, exist_ok=True)
+        if args.refile:
+            with migration_lock(private):
+                moved = refile(library, [private / "inbox", private / "archive"])
+            print("Re-filed {} photos into their corrected day folders.".format(len(moved)))
+            return 0
         with migration_lock(private):
             receipt, records = migrate(roots, library, private)
         print("Organized and verified {} photos. Future transfers now use {}".format(len(records), library))

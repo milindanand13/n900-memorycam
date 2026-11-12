@@ -26,8 +26,12 @@ class DateChecks(unittest.TestCase):
         self.assertEqual(library.date_folders("20270101_001.jpg", date(2027, 1, 2)),
                          Path("2026-W53/2027-01-01"))
 
+    def test_confirmed_wrong_clock_dates_are_filed_under_the_real_day(self):
+        self.assertEqual(library.date_folders("20090101_001.jpg", date(2026, 10, 25)), Path("2026-W37/2026-09-12"))
+        self.assertEqual(library.date_folders("20090119_004.jpg", date(2026, 10, 25)), Path("2026-W40/2026-09-29"))
+
     def test_bad_old_missing_and_future_dates_are_not_invented(self):
-        for name in ("20090101_001.jpg", "20120712_001.jpg", "20260230_001.jpg", "me.png", "20271022_001.jpg"):
+        for name in ("20090103_001.jpg", "20120712_001.jpg", "20260230_001.jpg", "me.png", "20271022_001.jpg"):
             self.assertEqual(library.date_folders(name, date(2026, 10, 25)), Path("Date-unverified"))
 
     def test_external_destination_is_explicit_and_nested_symlink_cannot_escape(self):
@@ -55,7 +59,7 @@ class MigrationChecks(unittest.TestCase):
         self.temp.cleanup()
 
     def test_verified_move_keeps_old_paths_working_and_repeat_run_is_safe(self):
-        old = self.source / "20090119_004.jpg"
+        old = self.source / "20090103_004.jpg"
         recent = self.source / "20261022_001.jpg"
         old.write_bytes(JPEG)
         recent.write_bytes(JPEG + b"new")
@@ -72,10 +76,39 @@ class MigrationChecks(unittest.TestCase):
         self.assertEqual(recent.read_bytes(), JPEG + b"new")
         self.assertEqual(note.read_text(), "keep")
         self.assertTrue((self.photos / "2026-W43/2026-10-22/20261022_001.jpg").is_file())
-        self.assertTrue((self.photos / "Date-unverified/20090119_004.jpg").is_file())
+        self.assertTrue((self.photos / "Date-unverified/20090103_004.jpg").is_file())
         self.assertEqual(library.configured_root(self.private, self.root / "repo"), self.photos.resolve())
         organize.migrate([self.source], self.photos, self.private)
         self.assertEqual(len(list(self.photos.rglob("*.jpg"))), 2)
+
+    def test_refile_moves_photos_to_the_corrected_day_and_repoints_old_links(self):
+        # State before the dates were confirmed: a 2009-clock photo sitting in Date-unverified.
+        old = self.photos / "Date-unverified/20090101_001.jpg"
+        old.parent.mkdir(parents=True)
+        old.write_bytes(JPEG)
+        link = self.source / "20090101_001.jpg"
+        link.symlink_to(old)
+        stay = self.photos / "Date-unverified/20090103_001.jpg"  # no confirmed date: must not move
+        stay.write_bytes(JPEG + b"x")
+        moved = organize.refile(self.photos, [self.source])
+        new = self.photos / "2026-W37/2026-09-12/20090101_001.jpg"
+        self.assertEqual(moved, [(old, new)])
+        self.assertEqual(new.read_bytes(), JPEG)
+        self.assertFalse(old.exists())
+        self.assertEqual(link.resolve(), new.resolve())
+        self.assertTrue(stay.is_file())
+        self.assertEqual(organize.refile(self.photos, [self.source]), [])  # repeat run is a no-op
+
+    def test_refile_never_overwrites_a_different_photo(self):
+        old = self.photos / "Date-unverified/20090101_001.jpg"
+        taken = self.photos / "2026-W37/2026-09-12/20090101_001.jpg"
+        for path, data in ((old, JPEG), (taken, JPEG + b"other")):
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(data)
+        with self.assertRaises(ValueError):
+            organize.refile(self.photos, [self.source])
+        self.assertEqual(old.read_bytes(), JPEG)
+        self.assertEqual(taken.read_bytes(), JPEG + b"other")
 
     def test_bad_photo_does_not_switch_configuration_or_remove_sources(self):
         good, bad = self.source / "20261022_001.jpg", self.source / "20261022_002.jpg"
