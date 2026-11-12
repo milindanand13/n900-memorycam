@@ -236,6 +236,14 @@ class RunChecks(unittest.TestCase):
         self.assertEqual(phone.checksummed, [])
         self.assertEqual(len(self.receipts()), 2)  # nothing new, so no new receipt
 
+    def test_rejected_checksum_is_never_copied(self):
+        self.private.mkdir(parents=True)
+        (self.private / 'rejected-md5.txt').write_text('# not mine\n{}  20120718_001.jpg\n'.format(md5(JPEG + b'theirs')))
+        phone = FakePhone({'20261023_001.jpg': JPEG, '20120718_001.jpg': JPEG + b'theirs'})
+        self.assertEqual(self.run_transfer(phone), 0)
+        self.assertEqual(phone.downloaded, ['20261023_001.jpg'])
+        self.assertEqual([p.name for p in (self.private / 'inbox').iterdir()], ['20261023_001.jpg'])
+
     def test_overnight_replacement_with_same_listing_preserves_both_versions(self):
         day = date.today() - timedelta(days=1)
         name = day.strftime('%Y%m%d') + '_001.jpg'

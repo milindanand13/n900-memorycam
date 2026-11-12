@@ -73,6 +73,13 @@ def clean_path(source):
     return relative
 
 
+def rejected_checksums(path):
+    """MD5s of photos Milind rejected (not his); never copied again. One per line, as md5sum prints."""
+    if not path.is_file():
+        return set()
+    return {line.split()[0] for line in path.read_text().splitlines() if line.strip() and not line.startswith("#")}
+
+
 def parse_manifest(value):
     """Turn the phone's `md5sum` output into sorted (relative path, checksum) pairs.
 
@@ -322,6 +329,8 @@ def main(argv=None):
         cache_path = PRIVATE / "md5-cache.json"
         cache = load_cache(cache_path)
         sources, skipped, cache["phone"] = read_phone(ssh, remote_root, cache["phone"])
+        rejected = rejected_checksums(PRIVATE / "rejected-md5.txt")
+        sources = [(source, checksum) for source, checksum in sources if checksum not in rejected]
         receipt["phone_photo_count"] = len(sources)
         print("Found {} images in {} on the Nokia.".format(len(sources), remote_root), flush=True)
         if skipped:
