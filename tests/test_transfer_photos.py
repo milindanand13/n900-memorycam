@@ -236,6 +236,26 @@ class RunChecks(unittest.TestCase):
         self.assertEqual(phone.checksummed, [])
         self.assertEqual(len(self.receipts()), 2)  # nothing new, so no new receipt
 
+    def test_new_photo_with_untrusted_date_raises_a_warning(self):
+        library = Path(self.temp.name) / 'Pictures/Nokia-N900'
+        self.private.mkdir(parents=True)
+        (self.private / 'photo-library.json').write_text(json.dumps({'root': str(library), 'layout': 'iso-week/date-v1'}))
+        phone = FakePhone({'20261023_001.jpg': JPEG, '20090301_001.jpg': JPEG + b'badclock'})
+        with patch.object(transfer, 'notify') as notify:
+            self.assertEqual(self.run_transfer(phone), 0)
+        self.assertEqual(notify.call_count, 1)
+        self.assertIn('20090301_001.jpg', notify.call_args[0][0])
+        self.assertEqual(json.loads(self.receipts()[0].read_text())['date_warnings'], ['20090301_001.jpg'])
+        self.assertTrue((library / 'Date-unverified/20090301_001.jpg').is_file())
+
+    def test_rejected_checksum_is_never_copied(self):
+        self.private.mkdir(parents=True)
+        (self.private / 'rejected-md5.txt').write_text('# not mine\n{}  20120718_001.jpg\n'.format(md5(JPEG + b'theirs')))
+        phone = FakePhone({'20261023_001.jpg': JPEG, '20120718_001.jpg': JPEG + b'theirs'})
+        self.assertEqual(self.run_transfer(phone), 0)
+        self.assertEqual(phone.downloaded, ['20261023_001.jpg'])
+        self.assertEqual([p.name for p in (self.private / 'inbox').iterdir()], ['20261023_001.jpg'])
+
     def test_overnight_replacement_with_same_listing_preserves_both_versions(self):
         day = date.today() - timedelta(days=1)
         name = day.strftime('%Y%m%d') + '_001.jpg'

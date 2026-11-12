@@ -73,6 +73,22 @@ def clean_path(source):
     return relative
 
 
+def rejected_checksums(path):
+    """MD5s of photos Milind rejected (not his); never copied again. One per line, as md5sum prints."""
+    if not path.is_file():
+        return set()
+    return {line.split()[0] for line in path.read_text().splitlines() if line.strip() and not line.startswith("#")}
+
+
+def notify(text):
+    """Best-effort macOS banner: the scheduled job has no terminal, so a bad-clock photo would go unseen."""
+    if sys.platform == "darwin":
+        try:
+            subprocess.Popen(["osascript", "-e", "display notification {} with title \"Memorycam\"".format(json.dumps(text))])
+        except OSError:
+            pass
+
+
 def parse_manifest(value):
     """Turn the phone's `md5sum` output into sorted (relative path, checksum) pairs.
 
@@ -322,6 +338,8 @@ def main(argv=None):
         cache_path = PRIVATE / "md5-cache.json"
         cache = load_cache(cache_path)
         sources, skipped, cache["phone"] = read_phone(ssh, remote_root, cache["phone"])
+        rejected = rejected_checksums(PRIVATE / "rejected-md5.txt")
+        sources = [(source, checksum) for source, checksum in sources if checksum not in rejected]
         receipt["phone_photo_count"] = len(sources)
         print("Found {} images in {} on the Nokia.".format(len(sources), remote_root), flush=True)
         if skipped:
@@ -333,6 +351,7 @@ def main(argv=None):
         save_cache(cache_path, cache)
         pending = [(source, checksum) for source, checksum in sources if checksum not in local_by_checksum]
         print("{} already present; {} to copy.".format(len(sources) - len(pending), len(pending)), flush=True)
+        date_warnings = []
         for source, expected in sources:
             if expected in local_by_checksum:
                 destination = local_by_checksum[expected]
@@ -354,6 +373,8 @@ def main(argv=None):
                     destination, status = publish_verified(part, target_folder, PurePosixPath(source).name, expected)
                     local_by_checksum[expected] = destination
                     print("Verified: {} ({} bytes)".format(destination.name, destination.stat().st_size), flush=True)
+                    if organized and target_folder.name == "Date-unverified":
+                        date_warnings.append(destination.name)
                 finally:
                     if part.exists():
                         part.unlink()
@@ -365,6 +386,12 @@ def main(argv=None):
                 "status": status,
             })
         receipt["complete"] = True
+        if date_warnings:
+            receipt["date_warnings"] = date_warnings
+            message = "{} new photo(s) have a camera date that cannot be trusted ({}). The phone clock may have reset: check its date, then add real dates to photo_library.CLOCK_FIXES.".format(
+                len(date_warnings), ", ".join(date_warnings[:3]))
+            print("WARNING: " + message, flush=True)
+            notify(message)
     except (OSError, ValueError, subprocess.SubprocessError) as error:
         receipt["error"] = str(error)
         print("Transfer stopped: {}".format(error), file=sys.stderr)

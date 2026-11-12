@@ -133,7 +133,7 @@ class ChoiceChecks(unittest.TestCase):
 
     def test_listed_wrong_clock_dates_count_as_their_real_day(self):
         self.add('20090113_001.jpg', scene=0.5, folder='Date-unverified')
-        self.add('20090118_001.jpg', scene=0.9, folder='Date-unverified')     # not listed: stays unverified
+        self.add('20090103_001.jpg', scene=0.9, folder='Date-unverified')     # not listed: stays unverified
         result = self.choose_by_name(day=date(2026, 9, 23))
         self.assertEqual((result['source'], result['chosen']), ('today', 'Date-unverified/20090113_001.jpg'))
         self.add('20090119_001.jpg', scene=0.1, folder='Date-unverified')
@@ -144,7 +144,7 @@ class ChoiceChecks(unittest.TestCase):
 
     def test_listed_wrong_clock_photo_can_be_a_stand_in_but_unlisted_cannot(self):
         self.add('20090101_001.jpg', scene=0.5, folder='Date-unverified')
-        self.add('20090118_001.jpg', scene=0.9, folder='Date-unverified')
+        self.add('20090103_001.jpg', scene=0.9, folder='Date-unverified')
         self.add('20090119_001.jpg', scene=0.1, folder='Date-unverified')
         result = self.choose_by_name()
         self.assertEqual(result['source'], 'stand-in')

@@ -29,7 +29,7 @@ from pathlib import Path
 import numpy as np
 
 import match_archive as match
-from photo_library import configured_root, date_folders, validate_root
+from photo_library import CLOCK_FIXES, configured_root, date_folders, validate_root
 
 LEDGER = match.PRIVATE / 'daily-choice.json'
 TOKENIZER = match.PRIVATE / 'models' / 'clip-tokenizer'
@@ -39,10 +39,6 @@ BRIGHTEN_BELOW = 110.0  # photos darker than this mean level are lifted to it be
 DARK_FULL = 70.0        # mean grey level at and above which a photo loses no score for darkness
 DARK_PENALTY = 0.03     # score a black photo loses, shrinking to nothing at DARK_FULL
 NEAR_COPY = 0.95        # CLIP cosine at which two shots count as the same picture
-# The N900 clock restarted at 2009-01-01 on 2026-09-11 and counted up a day at a time until it was fixed on
-# 2026-09-29. Only the filename dates checked against Google Photos are listed, so 20090114 and 20090118 stay out.
-CLOCK_FIXES = {'20090101': date(2026, 9, 11), '20090110': date(2026, 9, 20),
-               '20090113': date(2026, 9, 23), '20090119': date(2026, 9, 29)}
 # Internal prompts that steer the score; they are never shown or printed.
 SCENE_PROMPTS = ['a photo of a place or landscape', 'people together doing an activity',
                  'a street or city scene', 'a meal or event with friends', 'a scenic view outdoors']
@@ -51,10 +47,7 @@ NOT_SCENE_PROMPTS = ['a selfie in a mirror', 'a close-up photo of an object', 'a
 
 
 def photo_day(name, today):
-    """The camera-filename date (corrected through CLOCK_FIXES), or None when it is unverified or in the future."""
-    fixed = CLOCK_FIXES.get(Path(name).name[:8])
-    if fixed:
-        return fixed
+    """The camera-filename date (wrong-clock photos corrected through photo_library.CLOCK_FIXES), or None when it is unverified or in the future."""
     folder = date_folders(name, today=today)
     return None if folder.name == 'Date-unverified' else date.fromisoformat(folder.name)
 
